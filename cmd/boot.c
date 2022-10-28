@@ -70,3 +70,11 @@ U_BOOT_CMD(
 	""
 );
 #endif
+
+#if IS_ENABLED(CONFIG_CMD_TEST_ENTER_SUSPEND)
+U_BOOT_CMD(
+	test_enter_suspend, 1, 0, do_test_enter_suspend,
+	"Test the enter SUSPEND sequence of the device",
+	""
+);
+#endif

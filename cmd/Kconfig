@@ -1567,6 +1567,13 @@ config CMD_POWEROFF
 	help
 	  Poweroff/Shutdown the system
 
+config CMD_TEST_ENTER_SUSPEND
+	bool "test enter suspend"
+	depends on ARM
+	select ARM_SMCCC
+	help
+	  Command to test the suspend sequence (only for test)
+
 config CMD_READ
 	bool "read - Read binary data from a partition"
 	help

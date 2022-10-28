@@ -220,6 +220,8 @@ int do_reset(struct cmd_tbl *cmdtp, int flag, int argc,
 	     char *const argv[]);
 int do_poweroff(struct cmd_tbl *cmdtp, int flag, int argc,
 		char *const argv[]);
+int do_test_enter_suspend(struct cmd_tbl *cmdtp, int flag, int argc,
+			  char *const argv[]);
 
 unsigned long do_go_exec(ulong (*entry)(int, char * const []), int argc,
 			 char *const argv[]);

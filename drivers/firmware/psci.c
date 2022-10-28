@@ -23,6 +23,9 @@
 #include <linux/printk.h>
 #include <linux/psci.h>
 #include <power-domain-uclass.h>
+#if IS_ENABLED(CONFIG_CMD_TEST_ENTER_SUSPEND)
+#include <cpu_func.h>
+#endif
 
 #define DRIVER_NAME "psci"
 
@@ -316,6 +319,26 @@ int do_poweroff(struct cmd_tbl *cmdtp, int flag, int argc, char *const argv[])
 	enable_interrupts();
 
 	log_err("Power off not supported on this platform\n");
+	return CMD_RET_FAILURE;
+}
+#endif
+
+#if IS_ENABLED(CONFIG_CMD_TEST_ENTER_SUSPEND)
+int do_test_enter_suspend(struct cmd_tbl *cmdtp, int flag, int argc, char *const argv[])
+{
+	do_psci_probe();
+
+	puts("suspend ...\n");
+	puts("disable dcache\n");
+
+	dcache_disable();
+
+	/* ARM_PSCI_1_0_FN64_SYSTEM_SUSPEND */
+	invoke_psci_fn(PSCI_0_2_FN64(14), (unsigned long)do_test_enter_suspend, 0, 0);
+
+	dcache_enable();
+
+	log_err("Suspend failed or not supported on this platform\n");
 	return CMD_RET_FAILURE;
 }
 #endif
