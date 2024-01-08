@@ -96,6 +96,11 @@ struct legacy_img_hdr *spl_get_load_buffer(ssize_t offset, size_t size)
 		panic("SYSFW load address not defined!");
 }
 
+__weak int board_is_resuming(void)
+{
+	return 0;
+}
+
 /*
  * Populate SPL hook to skip the default SPL loader FIT post-processing steps
  * during SYSFW loading and return to the calling function so we can perform
@@ -103,7 +108,7 @@ struct legacy_img_hdr *spl_get_load_buffer(ssize_t offset, size_t size)
  */
 bool spl_load_simple_fit_skip_processing(void)
 {
-	return !sysfw_loaded;
+	return board_is_resuming() ? true : !sysfw_loaded;
 }
 
 static int fit_get_data_by_name(const void *fit, int images, const char *name,
