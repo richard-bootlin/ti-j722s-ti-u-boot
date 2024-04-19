@@ -325,12 +325,18 @@ static int k3_r5f_load(struct udevice *dev, ulong addr, ulong size)
 		return ret;
 	mem_auto_init = !(cfg & PROC_BOOT_CFG_FLAG_R5_MEM_INIT_DIS);
 
+	k3_r5f_proc_release(core);
+
 	ret = k3_r5f_prepare(dev);
 	if (ret) {
 		dev_err(dev, "R5f prepare failed for core %d\n",
 			core->tsp.proc_id);
 		goto proc_release;
 	}
+	
+	ret = k3_r5f_proc_request(core);
+	if (ret)
+		return ret;
 
 	k3_r5f_init_tcm_memories(core, mem_auto_init);
 
@@ -502,10 +508,6 @@ static int k3_r5f_stop(struct udevice *dev)
 
 	dev_dbg(dev, "%s\n", __func__);
 
-	ret = k3_r5f_proc_request(core);
-	if (ret)
-		return ret;
-
 	core->in_use = false;
 
 	if (cluster->mode == CLUSTER_MODE_LOCKSTEP) {
@@ -522,6 +524,7 @@ static int k3_r5f_stop(struct udevice *dev)
 	}
 
 	ret = k3_r5f_unprepare(dev);
+	return ret;
 proc_release:
 	k3_r5f_proc_release(core);
 	return ret;
