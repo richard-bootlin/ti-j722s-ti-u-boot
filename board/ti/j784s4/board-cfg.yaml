@@ -28,7 +28,7 @@ board-cfg:
         subhdr:
             magic: 0xA5C3
             size: 5
-        msmc_cache_size: 0x8
+        msmc_cache_size: 0x0
     debug_cfg:
         subhdr:
             magic: 0x020C
