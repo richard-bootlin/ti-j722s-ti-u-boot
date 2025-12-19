@@ -379,7 +379,8 @@ void __noreturn jump_to_image_no_args(struct spl_image_info *spl_image)
 	} else {
 		loadaddr = fit_image_info[IMAGE_ID_DM_FW].image_start;
 		if (valid_elf_image(loadaddr)) {
-#if IS_ENABLED(CONFIG_SOC_K3_J721E) || IS_ENABLED(CONFIG_SOC_K3_J784S4)
+#if IS_ENABLED(CONFIG_SOC_K3_J721E) || IS_ENABLED(CONFIG_SOC_K3_J784S4) \
+			 || IS_ENABLED(CONFIG_SOC_K3_J722S)
 			loadaddr = extract_shdr(".ctx_buffer", loadaddr, &size);
 			if (!loadaddr) {
 				pr_warn("Extract addr failed : %x\n", loadaddr);
