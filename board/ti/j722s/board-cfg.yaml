@@ -32,5 +32,5 @@ board-cfg:
         subhdr:
             magic: 0x020C
             size: 8
-        trace_dst_enables: 0x00
-        trace_src_enables: 0x00
+        trace_dst_enables: 0x0D
+        trace_src_enables: 0x3F

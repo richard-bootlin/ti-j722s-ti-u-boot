@@ -574,7 +574,7 @@
 	/* WKUP UART0 is used by Device Manager firmware */
 	pinctrl-names = "default";
 	pinctrl-0 = <&wkup_uart0_pins_default>;
-	status = "reserved";
+	status = "ok";
 	bootph-all;
 };
 
