@@ -20,6 +20,7 @@
 #include <wait_bit.h>
 #include <power/regulator.h>
 
+#include "k3-ddrss-lpm.h"
 #include "lpddr4_obj_if.h"
 #include "lpddr4_if.h"
 #include "lpddr4_structs_if.h"
@@ -119,6 +120,8 @@ enum intrlv_size {
 
 struct k3_ddrss_data {
 	u32 flags;
+	bool (*is_lpm_resume)(void);
+	void (*ddrss_deassert_retention)(void);
 };
 
 enum ecc_enable {
@@ -866,6 +869,7 @@ static void k3_ddrss_lpddr4_ecc_init(struct k3_ddrss_desc *ddrss)
 
 static int k3_ddrss_probe(struct udevice *dev)
 {
+	struct k3_ddrss_data *ddrss_data = (struct k3_ddrss_data *)dev_get_driver_data(dev);
 	u64 end, bank0, bank1, bank0_size;
 	int ret;
 	struct k3_ddrss_desc *ddrss = dev_get_priv(dev);
@@ -873,12 +877,17 @@ static int k3_ddrss_probe(struct udevice *dev)
 	__maybe_unused u32 inst;
 	__maybe_unused struct k3_ddrss_ecc_region *range = ddrss->ecc_ranges;
 	__maybe_unused struct k3_msmc *msmc_parent = NULL;
+	bool is_lpm_resume;
 
 	debug("%s(dev=%p)\n", __func__, dev);
 
 	ret = k3_ddrss_ofdata_to_priv(dev);
 	if (ret)
 		return ret;
+
+	is_lpm_resume = ddrss_data->is_lpm_resume && ddrss_data->is_lpm_resume();
+	if (is_lpm_resume)
+		dev_info(dev, "Detected IO+DDR resume\n");
 
 	ddrss->dev = dev;
 	ret = k3_ddrss_power_on(ddrss);
@@ -895,11 +904,20 @@ static int k3_ddrss_probe(struct udevice *dev)
 	k3_lpddr4_init(ddrss);
 	k3_lpddr4_hardware_reg_init(ddrss);
 
+	if (is_lpm_resume)
+		k3_ddrss_self_refresh_exit(ddrss->ddrss_ctl_cfg);
+
 	ret = k3_ddrss_init_freq(ddrss);
 	if (ret)
 		return ret;
 
+	if (is_lpm_resume && ddrss_data->ddrss_deassert_retention)
+		ddrss_data->ddrss_deassert_retention();
+
 	k3_lpddr4_start(ddrss);
+
+	if (is_lpm_resume)
+		k3_ddrss_lpm_resume(ddrss->ddrss_ctl_cfg);
 
 	if (IS_ENABLED(CONFIG_K3_INLINE_ECC)) {
 		if (!ddrss->ddrss_ss_cfg) {
@@ -1020,12 +1038,18 @@ static const struct k3_ddrss_data k3_data = {
 	.flags = SINGLE_DDR_SUBSYSTEM,
 };
 
+static const struct k3_ddrss_data am62xx_data = {
+	.flags = SINGLE_DDR_SUBSYSTEM,
+	.is_lpm_resume = am62xx_wkup_conf_boot_is_resume,
+	.ddrss_deassert_retention = am62xx_ddrss_deassert_retention,
+};
+
 static const struct k3_ddrss_data j721s2_data = {
 	.flags = MULTI_DDR_SUBSYSTEM,
 };
 
 static const struct udevice_id k3_ddrss_ids[] = {
-	{.compatible = "ti,am62a-ddrss", .data = (ulong)&k3_data, },
+	{.compatible = "ti,am62a-ddrss", .data = (ulong)&am62xx_data, },
 	{.compatible = "ti,am64-ddrss", .data = (ulong)&k3_data, },
 	{.compatible = "ti,j721e-ddrss", .data = (ulong)&k3_data, },
 	{.compatible = "ti,j721s2-ddrss", .data = (ulong)&j721s2_data, },
