@@ -12,5 +12,6 @@
 #include <asm/io.h>
 
 bool wkup_ctrl_is_lpm_exit(void);
+int wkup_ctrl_remove_can_io_isolation_if_set(void);
 
 #endif  /* _AM62XX_LPM_COMMON_H_ */

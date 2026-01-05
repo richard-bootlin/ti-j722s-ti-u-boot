@@ -15,6 +15,7 @@
 
 #include "../sysfw-loader.h"
 #include "../common.h"
+#include "../am62xx-lpm-common.h"
 
 #define RTC_BASE_ADDRESS		0x2b1f0000
 #define REG_K3RTC_S_CNT_LSW		(RTC_BASE_ADDRESS + 0x18)
@@ -162,6 +163,10 @@ void board_init_f(ulong dummy)
 
 	/* Init DM early */
 	spl_early_init();
+
+	ret = wkup_ctrl_remove_can_io_isolation_if_set();
+	if (ret)
+		panic("Failed to remove can IO isolation when set %d\n", ret);
 
 	/*
 	 * Process pinctrl for the serial0 and serial3, aka WKUP_UART0 and

@@ -14,6 +14,7 @@
 
 #include "../sysfw-loader.h"
 #include "../common.h"
+#include "../am62xx-lpm-common.h"
 
 #define CTRLMMR_MCU_RST_CTRL             0x04518170
 #define RST_CTRL_ESM_ERROR_RST_EN_Z_MASK 0xFFFDFFFF
@@ -138,6 +139,10 @@ void board_init_f(ulong dummy)
 
 	/* Init DM early */
 	spl_early_init();
+
+	ret = wkup_ctrl_remove_can_io_isolation_if_set();
+	if (ret)
+		panic("Failed to remove can IO isolation when set %d\n", ret);
 
 	/*
 	 * Process pinctrl for the serial0 and serial3, aka WKUP_UART0 and
