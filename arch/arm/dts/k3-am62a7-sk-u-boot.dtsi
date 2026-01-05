@@ -16,6 +16,10 @@
 	};
 };
 
+&wkup_r5fss0_core0_memory_region {
+	bootph-pre-ram;
+};
+
 &cbass_main {
 	bootph-all;
 };
@@ -66,6 +70,10 @@
 
 &cbass_mcu {
 	bootph-all;
+};
+
+&wkup_r5fss0_core0 {
+	bootph-pre-ram;
 };
 
 &cbass_wakeup {
