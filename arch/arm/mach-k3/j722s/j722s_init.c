@@ -11,6 +11,8 @@
 #include <dm.h>
 #include <dm/uclass-internal.h>
 #include <dm/pinctrl.h>
+#include <mach/k3-ddrss.h>
+#include <power/pmic.h>
 
 #include "../sysfw-loader.h"
 #include "../common.h"
@@ -156,15 +158,45 @@ static void k3_spl_init(void)
 		k3_dm_print_ver();
 }
 
+static void j722s_pmic_exit_low_power(void)
+{
+	struct udevice *pmic;
+	int err;
+
+	err = uclass_get_device_by_name(UCLASS_PMIC,
+					"pmic@48", &pmic);
+	if (err) {
+		printf("Getting PMIC init failed: %d\n", err);
+		return;
+	}
+	printf("Getting PMIC init succeeded!\n");
+
+	/*
+	 * TODO: pmic sequence
+	 * pmic_reg_write(pmic, PMIC_NSLEEP_REG, 0x3);
+	 */
+}
+
 static void k3_mem_init(void)
 {
 	struct udevice *dev;
+	struct k3_ddrss_regs regs;
 	int ret;
 
 	if (IS_ENABLED(CONFIG_K3_AM62A_DDRSS)) {
 		ret = uclass_get_device(UCLASS_RAM, 0, &dev);
 		if (ret)
 			panic("DRAM init failed: %d\n", ret);
+		if (board_is_resuming() > 0) {
+			printf("PMIC Magic found!\n");
+			/*
+			 * TODO:
+			 * The DDR resume sequence is:
+			 * - exit DDR from low power
+			 */
+			j722s_pmic_exit_low_power();
+			k3_ddrss_lpddr4_exit_low_power(dev, &regs);
+		}
 	}
 }
 
@@ -181,6 +213,9 @@ void board_init_f(ulong dummy)
 {
 	int ret;
 	struct udevice *dev;
+
+	/* init resume flag */
+	gd_set_k3_resuming(-1);
 
 	k3_spl_init();
 	k3_mem_init();

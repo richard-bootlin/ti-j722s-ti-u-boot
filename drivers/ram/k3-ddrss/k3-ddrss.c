@@ -518,8 +518,50 @@ static int k3_ddrss_ofdata_to_priv(struct udevice *dev)
 	return ret;
 }
 
-#if defined(CONFIG_K3_J721E_DDRSS)
+#if defined(CONFIG_K3_AM62A_DDRSS)
+int __weak board_is_resuming(void)
+{
+	return 0;
+}
 
+void k3_ddrss_lpddr4_exit_low_power(struct udevice *dev,
+				    struct k3_ddrss_regs *regs)
+{
+	struct k3_ddrss_desc *ddrss = dev_get_priv(dev);
+	u32 regval;
+	volatile unsigned int val;
+
+	/* Exit self refresh */
+	lpddr4_k3_readreg_ctl(ddrss, DENALI_CTL_158, &regval);
+	regval &= ~0xFF00U; // CDNS_DENALI_CTL_158_LP_CMD_MASK
+	regval |= 0x0200; // CDNS_DENALI_CTL_158_LP_CMD_RESUME;
+	lpddr4_k3_writereg_ctl(ddrss, DENALI_CTL_158, regval);
+
+	/* Clear CDNS_DENALI_PHY_1369:PHY UPDATE MASK */
+	lpddr4_k3_readreg_phy(ddrss, DENALI_PHY_1369, &regval);
+	regval &= ~0x1U; // CDNS_DENALI_PHY_1369_PHY_UPDATE_MASK
+	lpddr4_k3_writereg_phy(ddrss, DENALI_PHY_1369, regval);
+
+	/* Set 0x7 in CDNS_DENALI_PHY_1364:PHY_INIT_UPDATE_CONFIG */
+	lpddr4_k3_readreg_phy(ddrss, DENALI_PHY_1364, &regval);
+	regval |= 0x7U << 8; // CDNS_DENALI_PHY_1364_PHY_INIT_UPDATE_CONFIG_MASK
+	lpddr4_k3_writereg_phy(ddrss, DENALI_PHY_1364, regval);
+
+	/* Ensure no timeout errors during self refresh entry or exit */
+	lpddr4_k3_readreg_ctl(ddrss, DENALI_CTL_336, &regval);
+	if (regval != 0) {
+		/* timeout error TODO ?*/
+		return;
+	}
+
+	/* Remove reset signal and return to pre deep sleep state */
+	lpddr4_k3_readreg_phy(ddrss, DENALI_PHY_1306, &regval);
+	regval &= ~0x1U; // CDNS_DENALI_PHY_1306_PHY_SET_DFI_INPUT_0
+	lpddr4_k3_writereg_phy(ddrss, DENALI_PHY_1306, regval);
+}
+#endif
+
+#if defined(CONFIG_K3_J721E_DDRSS)
 int __weak board_is_resuming(void)
 {
 	return 0;
@@ -1409,7 +1451,7 @@ static int k3_ddrss_probe(struct udevice *dev)
 	if (ret)
 		return ret;
 
-#if defined(CONFIG_K3_J721E_DDRSS)
+#if defined(CONFIG_K3_J721E_DDRSS) || defined(CONFIG_K3_AM62A_DDRSS)
 	if (board_is_resuming())
 		return 0;
 #endif
