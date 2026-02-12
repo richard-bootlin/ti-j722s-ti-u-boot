@@ -6,6 +6,15 @@
 #ifndef LPDDR4_K3_REG
 #define LPDDR4_K3_REG
 
+#define lpddr4_k3_readreg_raw(k3_ddrss, block, offset, pt) do {	\
+	u32 result = 0U;						\
+	result = k3_ddrss->driverdt->readreg(&k3_ddrss->pd, block, offset, pt); \
+	if (result > 0U) {						\
+		printf("%s: Failed to read reg %u block %d\n",		\
+		       __func__, offset, block);			\
+			hang();						\
+		}							\
+	} while (0)
 
 #define lpddr4_k3_readreg(k3_ddrss, block, shift, reg, pt) do {		\
 		u32 offset = 0U;					\
@@ -14,6 +23,18 @@
 		result = k3_ddrss->driverdt->readreg(&k3_ddrss->pd, block, offset, pt); \
 		if (result > 0U) {					\
 			printf("%s: Failed to read %s\n", __func__, xstr(reg));	\
+			hang();						\
+		}							\
+	} while (0)
+
+#define lpddr4_k3_writereg_raw(k3_ddrss, block, offset, value) do {	\
+	u32 result = 0U;						\
+printf("%s: Writing block %d offset %u val=0x%x\n",		\
+		       __func__, block, offset, value );			\
+	result = k3_ddrss->driverdt->writereg(&k3_ddrss->pd, block, offset, value); \
+	if (result > 0U) {						\
+		printf("%s: Failed to write reg %u block %d\n",		\
+		       __func__, offset, block);			\
 			hang();						\
 		}							\
 	} while (0)
