@@ -22,6 +22,9 @@
 #include <wait_bit.h>
 #include <power/regulator.h>
 #include <mach/k3-ddrss.h>
+#if defined(CONFIG_K3_AM62A_DDRSS) && IS_ENABLED(CONFIG_SOC_K3_J722S)
+#include <mach/j722s_lpddr4_reg_config_svb.h>
+#endif
 
 #include "lpddr4_obj_if.h"
 #include "lpddr4_if.h"
@@ -596,14 +599,11 @@ static void configure_CTL_registers(struct k3_ddrss_desc *ddrss)
 {
 	uint32_t wdata_322, wdata_323;
 
-#if 0
-	/* TODO: do we need that? */
-	for (u32 i = 0; i <= 434U; i++) {
-		SOC_write32(DDR_CTL_REG_BASE + (i * 4U), denali_ctl_data[i]);
-	}
-#endif
-
 	printf("%s\n", __func__);
+
+	for (u32 i = 0; i < ARRAY_SIZE(denali_ctl_data); i++)
+		lpddr4_k3_writereg_raw(ddrss, LPDDR4_CTL_REGS, i, denali_ctl_data[i]);
+
 	/*
 	 * DENALI_CTL_322_DATA - BANK_DIFF_1:RW:24:2:=0x01 BANK_DIFF_0:RW:16:2:=0x01 ZQ_CAL_LATCH_MAP_1:RW_D:8:2:=0x00 ZQ_CAL_START_MAP_1:RW_D:0:2:=0x00
 	 * DENALI_CTL_323_DATA - COL_DIFF_1:RW:24:4:=0x00 COL_DIFF_0:RW:16:4:=0x00 ROW_DIFF_1:RW:8:3:=0x01 ROW_DIFF_0:RW:0:3:=0x01
@@ -618,94 +618,70 @@ static void configure_CTL_registers(struct k3_ddrss_desc *ddrss)
 
 void configure_PI_registers(struct k3_ddrss_desc *ddrss)
 {
-#if 0
-	/* TODO: do we need that ? */
-	for (i = 0; i <= 423U; i++) {
-		SOC_write32(DDR_CTL_PI_REG_BASE + (i * 4U), denali_pi_data[i]);
-	}
-#endif
 	printf("%s\n", __func__);
+
+	for (u32 i = 0; i < ARRAY_SIZE(denali_pi_data); i++)
+		lpddr4_k3_writereg_raw(ddrss, LPDDR4_PHY_INDEP_REGS,
+					i, denali_pi_data[i]);
 }
 
-#if 0
-/* TODO: do we need that ? */
+#define DDRSS_Data_Slice_0_REGISTER_BLOCK__OFFS 0x4000U
+#define DDRSS_Data_Slice_1_REGISTER_BLOCK__OFFS 0x4400U
+#define DDRSS_Data_Slice_2_REGISTER_BLOCK__OFFS 0x4800U
+#define DDRSS_Data_Slice_3_REGISTER_BLOCK__OFFS 0x4c00U
+#define DDRSS_Address_Slice_0_REGISTER_BLOCK__OFFS      0x5000U
+#define DDRSS_Address_Slice_1_REGISTER_BLOCK__OFFS      0x5400U
+#define DDRSS_Address_Slice_2_REGISTER_BLOCK__OFFS      0x5800U
+#define DDRSS_PHY_Core_REGISTER_BLOCK__OFFS     0x5c00U
+
 void configure_data_slice0_registers(struct k3_ddrss_desc *ddrss)
 {
-	uint32_t i;
-
-	for (i = 0; i <= 136U; i++) {
-		{
-			SOC_write32(DDR_CTL_DATA_SLICE_0_REG_BASE + (i * 4U), denali_data_slice0[i]);
-		}
-	}
+	void __iomem *slice0_data = ddrss->ddrss_ctl_cfg + DDRSS_Data_Slice_0_REGISTER_BLOCK__OFFS;
+	for (u32 i = 0; i < ARRAY_SIZE(denali_data_slice0); i++)
+		writel(denali_data_slice0[i], slice0_data + (i * 4U));
 }
 
 void configure_data_slice1_registers(struct k3_ddrss_desc *ddrss)
 {
-	uint32_t DDR_CTL_DATA_SLICE_1_REG_BASE = (h->ctl_cfg_base_addr) + (uint32_t) DDRSS_Data_Slice_1_REGISTER_BLOCK__OFFS;
-	uint32_t i;
-
-	for (i = 0; i <= 136U; i++) {
-		{
-			SOC_write32(DDR_CTL_DATA_SLICE_1_REG_BASE + (i * 4U), denali_data_slice1[i]);
-		}
-	}
+	void __iomem *slice1_data = ddrss->ddrss_ctl_cfg + DDRSS_Data_Slice_1_REGISTER_BLOCK__OFFS;
+	for (u32 i = 0; i < ARRAY_SIZE(denali_data_slice1); i++)
+		writel(denali_data_slice1[i], slice1_data + (i * 4U));
 }
 
 void configure_data_slice2_registers(struct k3_ddrss_desc *ddrss)
 {
-	uint32_t DDR_CTL_DATA_SLICE_2_REG_BASE = (h->ctl_cfg_base_addr) + (uint32_t) DDRSS_Data_Slice_2_REGISTER_BLOCK__OFFS;
-	uint32_t i;
-
-	for (i = 0; i <= 136U; i++) {
-		{
-			SOC_write32(DDR_CTL_DATA_SLICE_2_REG_BASE + (i * 4U), denali_data_slice2[i]);
-		}
-	}
+	void __iomem *slice2_data = ddrss->ddrss_ctl_cfg + DDRSS_Data_Slice_2_REGISTER_BLOCK__OFFS;
+	for (u32 i = 0; i < ARRAY_SIZE(denali_data_slice2); i++)
+		writel(denali_data_slice2[i], slice2_data + (i * 4U));
 }
 
 void configure_data_slice3_registers(struct k3_ddrss_desc *ddrss)
 {
-	uint32_t DDR_CTL_DATA_SLICE_3_REG_BASE = (h->ctl_cfg_base_addr) + (uint32_t) DDRSS_Data_Slice_3_REGISTER_BLOCK__OFFS;
-	uint32_t i;
-
-	for (i = 0; i <= 136U; i++) {
-		{
-			SOC_write32(DDR_CTL_DATA_SLICE_3_REG_BASE + (i * 4U), denali_data_slice3[i]);
-		}
-	}
+	void __iomem *slice3_data = ddrss->ddrss_ctl_cfg + DDRSS_Data_Slice_3_REGISTER_BLOCK__OFFS;
+	for (u32 i = 0; i < ARRAY_SIZE(denali_data_slice3); i++)
+		writel(denali_data_slice3[i], slice3_data + (i * 4U));
 }
 
 void configure_address_slice0_registers(struct k3_ddrss_desc *ddrss)
 {
-	uint32_t DDR_CTL_ADDR_SLICE_0_REG_BASE = (h->ctl_cfg_base_addr) + (uint32_t) DDRSS_Address_Slice_0_REGISTER_BLOCK__OFFS;
-	uint32_t i;
-
-	for (i = 0; i <= 48U; i++) {
-		SOC_write32(DDR_CTL_ADDR_SLICE_0_REG_BASE + (i * 4U), denali_addr_slice0[i]);
-	}
+	void __iomem *slice0_addr = ddrss->ddrss_ctl_cfg + DDRSS_Address_Slice_0_REGISTER_BLOCK__OFFS;
+	for (u32 i = 0; i < ARRAY_SIZE(denali_addr_slice0); i++)
+		writel(denali_addr_slice0[i], slice0_addr + (i * 4U));
 }
 
 void configure_address_slice1_registers(struct k3_ddrss_desc *ddrss)
 {
-	uint32_t DDR_CTL_ADDR_SLICE_1_REG_BASE = (h->ctl_cfg_base_addr) + (uint32_t) DDRSS_Address_Slice_1_REGISTER_BLOCK__OFFS;
-	uint32_t i;
-
-	for (i = 0; i <= 48U; i++) {
-		SOC_write32(DDR_CTL_ADDR_SLICE_1_REG_BASE + (i * 4U), denali_addr_slice1[i]);
-	}
+	void __iomem *slice1_addr = ddrss->ddrss_ctl_cfg + DDRSS_Address_Slice_1_REGISTER_BLOCK__OFFS;
+	for (u32 i = 0; i < ARRAY_SIZE(denali_addr_slice1); i++)
+		writel(denali_addr_slice1[i], slice1_addr + (i * 4U));
 }
 
 void configure_address_slice2_registers(struct k3_ddrss_desc *ddrss)
 {
-	uint32_t DDR_CTL_ADDR_SLICE_2_REG_BASE = (h->ctl_cfg_base_addr) + (uint32_t) DDRSS_Address_Slice_2_REGISTER_BLOCK__OFFS;
-	uint32_t i;
-
-	for (i = 0; i <= 48U; i++) {
-		SOC_write32(DDR_CTL_ADDR_SLICE_2_REG_BASE + (i * 4U), denali_addr_slice2[i]);
-	}
+	void __iomem *slice2_addr = ddrss->ddrss_ctl_cfg + DDRSS_Address_Slice_2_REGISTER_BLOCK__OFFS;
+	for (u32 i = 0; i < ARRAY_SIZE(denali_addr_slice2); i++)
+		writel(denali_addr_slice2[i], slice2_addr + (i * 4U));
 }
-#endif
 
 #define DDRSS_PHY_Core_REGISTER_BLOCK__OFFS     0x5c00U
 void configure_ddrphy_registers(struct k3_ddrss_desc *ddrss)
@@ -713,13 +689,11 @@ void configure_ddrphy_registers(struct k3_ddrss_desc *ddrss)
 	uint32_t wdata_1826;
 
 	printf("%s\n", __func__);
-#if 0
-	/* TODO: do we need that ?*/
 	/* Program the PHY */
-	for (int i = 0; i < 132U; i++) {
-		SOC_write32(DDR_CTL_PHY_CORE_REG_BASE + (i * 4U), denali_phy_data[i]);
+	for (u32 i = 1792; i < (1792 + ARRAY_SIZE(denali_phy_data)); i++) {
+		printf("i=%d\n", i);
+		lpddr4_k3_writereg_raw(ddrss, LPDDR4_PHY_REGS, i, denali_phy_data[i]);
 	}
-#endif
 
 	/* PHY_SW_GRP0_SHIFT_0:RW+:24:5:=0x00 PHY_FREQ_SEL_INDEX:RW+:16:2:=0x00 PHY_FREQ_SEL_MULTICAST_EN:RW+:8:1:=0x01 PHY_FREQ_SEL_FROM_REGIF:RW_D:0:1:=0x00 */
 	lpddr4_k3_writereg_phy(ddrss, DENALI_PHY_1793, 0x00010000);
@@ -747,7 +721,6 @@ void configure_ddrphy_registers(struct k3_ddrss_desc *ddrss)
  */
 void configure_PHY_registers(struct k3_ddrss_desc *ddrss)
 {
-#if 0
 	configure_data_slice0_registers(ddrss);
 	configure_data_slice1_registers(ddrss);
 	configure_data_slice2_registers(ddrss);
@@ -755,7 +728,6 @@ void configure_PHY_registers(struct k3_ddrss_desc *ddrss)
 	configure_address_slice0_registers(ddrss);
 	configure_address_slice1_registers(ddrss);
 	configure_address_slice2_registers(ddrss);
-#endif
 	configure_ddrphy_registers(ddrss);
 }
 
@@ -792,48 +764,48 @@ static void put_ddrss_in_data_retention_thru_wkup_mmr(u32 enable)
 	/* Write `1' into data_ret_ld[31] MMR to generate a LD signal to latch the retention signal */
 	writel((((DDR16SS_DATA_RET_LD_OPEN << DDR16SS_DATA_RET_LD_BIT) | enable)), WKUP_CTRL_MMR_BASE + DDR16SS_PMCTRL);
 
+	printf("Waiting for the end of retention signal\n");
 	val = readl(WKUP_CTRL_MMR_BASE + DDR16SS_PMCTRL);
 	while (val != ((DDR16SS_DATA_RET_LD_OPEN << DDR16SS_DATA_RET_LD_BIT) | enable)) {
 		val = readl(WKUP_CTRL_MMR_BASE + DDR16SS_PMCTRL);
-		printf("reg=0x%x val=0x%x\n", WKUP_CTRL_MMR_BASE + DDR16SS_PMCTRL, val);
 	}
 
 	/* Writes `0' into data_ret_ld[31] to close the latch */
 	writel((((DDR16SS_DATA_RET_LD_CLOSE << DDR16SS_DATA_RET_LD_BIT) | enable)), WKUP_CTRL_MMR_BASE + DDR16SS_PMCTRL);
 }
 
-#define DDRSS_PI_REGISTER_BLOCK__OFFS   0x2000U
-#define DENALI_PI_0__SFR_OFFS   0x0U
-#define DENALI_CTL_0__SFR_OFFS  0x0U
 #define LPDDR4_DRAM_CLASS_REG_VALUE  0xBU
 static void start_PI_CTL_init(struct k3_ddrss_desc *ddrss)
 {
 	u32 wr_init_val;
-	u32 i;
 
 	printf("%s\n", __func__);
 	wr_init_val = ((LPDDR4_DRAM_CLASS_REG_VALUE << 8U) | 0x1U);
+
 	/* Set START bit in register for PI module */
 	// ctl_cfg_base_addr == 0x0F308000U
-	writel(wr_init_val, ddrss->ddrss_ctl_cfg + DDRSS_PI_REGISTER_BLOCK__OFFS
-	       + DENALI_PI_0__SFR_OFFS);
+	lpddr4_k3_writereg_pi(ddrss, DENALI_PI_0, wr_init_val);
 	udelay(500);
+
 	/* Set START bit in register for controller */
-	writel(wr_init_val, ddrss->ddrss_ctl_cfg + DENALI_CTL_0__SFR_OFFS);
+	lpddr4_k3_writereg_ctl(ddrss, DENALI_CTL_0, wr_init_val);
 }
 
-#define DENALI_PI_87__SFR_OFFS  0x15cU
-#define DENALI_CTL_350__SFR_OFFS        0x578U
 static void poll_for_init_completion(struct k3_ddrss_desc *ddrss)
 {
+	u32 regval;
+
 	printf("%s\n", __func__);
+
 	/* Poll for PI Init completion */
-	while (((readl(ddrss->ddrss_ctl_cfg + (u64) DDRSS_PI_REGISTER_BLOCK__OFFS
-		       + (u64) DENALI_PI_87__SFR_OFFS)) & 0x1U) != 0x1U) { ; }
+	do {
+		lpddr4_k3_readreg_pi(ddrss, DENALI_PI_87, &regval);
+	} while ((regval & 0x1U) != 0x1U);
 
 	/* Poll for CTL Init completion */
-	while (((readl(ddrss->ddrss_ctl_cfg + (u64) DENALI_CTL_350__SFR_OFFS))
-		& 0x02000000U) != 0x02000000U) { ; }
+	do {
+		lpddr4_k3_readreg_ctl(ddrss, DENALI_CTL_350, &regval);
+	} while ((regval & 0x02000000U) != 0x02000000U);
 }
 
 #define CSL_EMIF_CTLCFG_DENALI_PI_4 (0x00002010U)
