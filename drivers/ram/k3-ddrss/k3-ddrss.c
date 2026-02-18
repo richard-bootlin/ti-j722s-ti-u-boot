@@ -1399,13 +1399,16 @@ static void k3_ddrss_deassert_retention(struct k3_ddrss_desc *ddrss)
 			   K3_WKUP_CTRL_MMR0_DDR16SS_PMCTRL_DATA_RET_LD,
 			   K3_WKUP_CTRL_MMR0_DDR16SS_PMCTRL_DATA_RET_LD);
 
-	while (true) {
+	int i=100;
+	while (i--) {
 		u32 val;
 
 		regmap_read(ddrss->ddr_pmctrl, K3_WKUP_CTRL_MMR0_DDR16SS_PMCTRL, &val);
 		if (val & K3_WKUP_CTRL_MMR0_DDR16SS_PMCTRL_DATA_RET_LD)
 			break;
 	}
+	if (i <= 0)
+		printf("TIMEOUT on K3_WKUP_CTRL_MMR0_DDR16SS_PMCTRL_DATA_RET_LD\n");
 
 	regmap_update_bits(ddrss->ddr_pmctrl,
 			   K3_WKUP_CTRL_MMR0_DDR16SS_PMCTRL,
@@ -1543,6 +1546,10 @@ static int k3_ddrss_probe(struct udevice *dev)
 	is_lpm_resume = !IS_ERR_OR_NULL(ddrss->canuart_wake) &&
 		k3_ddrss_wkup_conf_boot_is_resume(ddrss);
 
+#if defined(CONFIG_K3_AM62A_DDRSS)
+	if (board_is_resuming())
+		is_lpm_resume = true;
+#endif
 	if (is_lpm_resume)
 		dev_info(dev, "Detected IO+DDR resume\n");
 	else
@@ -1572,7 +1579,7 @@ static int k3_ddrss_probe(struct udevice *dev)
 		return ret;
 
 #if defined(CONFIG_K3_J721E_DDRSS) || defined(CONFIG_K3_AM62A_DDRSS)
-	if (board_is_resuming())
+	if (board_is_resuming() && !is_lpm_resume)
 		return 0;
 #endif
 	if (is_lpm_resume)
