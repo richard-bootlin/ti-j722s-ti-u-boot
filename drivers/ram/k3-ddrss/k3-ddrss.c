@@ -568,9 +568,17 @@ static void put_ddrss_in_data_retention_thru_wkup_mmr(u32 enable)
 
 	printf("Waiting for the end of retention signal\n");
 	val = readl(WKUP_CTRL_MMR_BASE + DDR16SS_PMCTRL);
+	int timeout = 10000;
 	while (val != ((DDR16SS_DATA_RET_LD_OPEN << DDR16SS_DATA_RET_LD_BIT) | enable)) {
 		val = readl(WKUP_CTRL_MMR_BASE + DDR16SS_PMCTRL);
+		timeout--;
+		if (timeout-- < 0) {
+			printf("TIMEOUT waiting for DATA_RET_LD_OPEN. val=0x%x want=0x%x\n",
+			       val, (DDR16SS_DATA_RET_LD_OPEN << DDR16SS_DATA_RET_LD_BIT) | enable);
+			break;
+		}
 	}
+	if (timeout < 0)
 
 	/* Writes `0' into data_ret_ld[31] to close the latch */
 	writel((((DDR16SS_DATA_RET_LD_CLOSE << DDR16SS_DATA_RET_LD_BIT) | enable)), WKUP_CTRL_MMR_BASE + DDR16SS_PMCTRL);
