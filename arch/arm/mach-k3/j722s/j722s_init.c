@@ -193,8 +193,8 @@ static void k3_mem_init(void)
 			 * - exit DDR from low power
 			 */
 			j722s_pmic_exit_low_power();
-//			k3_ddrss_lpddr4_exit_low_power(dev, &regs);
-//			printf("DDR out of retention\n");
+			k3_ddrss_lpddr4_exit_low_power(dev, &regs);
+			printf("DDR out of retention?\n");
 		}
 	}
 }

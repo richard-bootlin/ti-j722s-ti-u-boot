@@ -1556,7 +1556,7 @@ static int k3_ddrss_probe(struct udevice *dev)
 
 #if defined(CONFIG_K3_AM62A_DDRSS)
 	if (board_is_resuming())
-		is_lpm_resume = true;
+		is_lpm_resume = false;
 #endif
 	if (is_lpm_resume)
 		dev_info(dev, "Detected IO+DDR resume\n");
