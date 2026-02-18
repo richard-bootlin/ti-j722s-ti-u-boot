@@ -158,6 +158,7 @@ static void k3_spl_init(void)
 		k3_dm_print_ver();
 }
 
+#define PMIC_NSLEEP_REG 0x86
 static void j722s_pmic_exit_low_power(void)
 {
 	struct udevice *pmic;
@@ -171,10 +172,7 @@ static void j722s_pmic_exit_low_power(void)
 	}
 	printf("Getting PMIC init succeeded!\n");
 
-	/*
-	 * TODO: pmic sequence
-	 * pmic_reg_write(pmic, PMIC_NSLEEP_REG, 0x3);
-	 */
+	pmic_reg_write(pmic, PMIC_NSLEEP_REG, 0x3);
 }
 
 static void k3_mem_init(void)
