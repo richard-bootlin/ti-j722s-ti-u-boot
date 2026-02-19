@@ -45,7 +45,8 @@ printf("%s: Writing block %d offset %u val=0x%x\n",		\
 		TH_OFFSET_FROM_REG(reg, shift, offset);			\
 		result = k3_ddrss->driverdt->writereg(&k3_ddrss->pd, block, offset, value); \
 		if (result > 0U) {					\
-			printf("%s: Failed to write %s\n", __func__, xstr(reg)); \
+			printf("%s: Failed to write reg %s offset=0x%x shift=0x%x value=0x%x\n", \
+			       __func__, xstr(reg), offset, shift, value); \
 			hang();						\
 		}							\
 	} while (0)

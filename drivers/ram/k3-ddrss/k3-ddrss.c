@@ -1376,6 +1376,7 @@ static void k3_ddrss_self_refresh_exit(struct k3_ddrss_desc *ddrss)
 
 static void k3_ddrss_lpm_resume(struct k3_ddrss_desc *ddrss)
 {
+	printf("%s\n", __func__);
 	k3_ddrss_reg_update_bits(ddrss->ddrss_ctl_cfg,
 				 K3_DDRSS_CFG_DENALI_CTL_160,
 				 K3_DDRSS_CFG_DENALI_CTL_160_LP_CMD_MASK,
@@ -1397,6 +1398,8 @@ static void k3_ddrss_lpm_resume(struct k3_ddrss_desc *ddrss)
 #if IS_ENABLED(CONFIG_REGMAP)
 static void k3_ddrss_deassert_retention(struct k3_ddrss_desc *ddrss)
 {
+	printf("%s\n", __func__);
+//??	writel(WWD_RUN, WKUP_CTRL_MMR_BASE + WKUP_WWD0_CTRL);
 	regmap_update_bits(ddrss->ddr_pmctrl,
 			   K3_WKUP_CTRL_MMR0_DDR16SS_PMCTRL,
 			   K3_WKUP_CTRL_MMR0_DDR16SS_PMCTRL_DATA_RET_LD |
@@ -1422,6 +1425,7 @@ static void k3_ddrss_deassert_retention(struct k3_ddrss_desc *ddrss)
 			   K3_WKUP_CTRL_MMR0_DDR16SS_PMCTRL,
 			   K3_WKUP_CTRL_MMR0_DDR16SS_PMCTRL_DATA_RET_LD,
 			   0);
+	printf("%s\n", __func__);
 }
 
 static void k3_ddrss_clear_retention_latch_and_magic_words(struct k3_ddrss_desc *ddrss)
@@ -1579,25 +1583,32 @@ static int k3_ddrss_probe(struct udevice *dev)
 	k3_lpddr4_init(ddrss);
 	k3_lpddr4_hardware_reg_init(ddrss);
 
+	printf("%s %d\n", __func__, __LINE__);
 	if (is_lpm_resume)
 		k3_ddrss_self_refresh_exit(ddrss);
 
+	printf("%s %d\n", __func__, __LINE__);
 	ret = k3_ddrss_init_freq(ddrss);
 	if (ret)
 		return ret;
 
+	printf("%s %d\n", __func__, __LINE__);
 #if defined(CONFIG_K3_J721E_DDRSS) || defined(CONFIG_K3_AM62A_DDRSS)
 	if (board_is_resuming() && !is_lpm_resume)
 		return 0;
 #endif
+	printf("%s %d\n", __func__, __LINE__);
 	if (is_lpm_resume)
 		k3_ddrss_deassert_retention(ddrss);
 
+	printf("%s %d\n", __func__, __LINE__);
 	k3_lpddr4_start(ddrss);
 
+	printf("%s %d\n", __func__, __LINE__);
 	if (is_lpm_resume)
 		k3_ddrss_lpm_resume(ddrss);
 
+	printf("%s %d\n", __func__, __LINE__);
 	if (IS_ENABLED(CONFIG_K3_INLINE_ECC)) {
 		if (!ddrss->ddrss_ss_cfg) {
 			printf("%s: ss_cfg is required if ecc is enabled but not provided.",

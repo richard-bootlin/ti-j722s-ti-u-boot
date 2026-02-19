@@ -5,7 +5,7 @@
  * Copyright (C) 2020-2021 Texas Instruments Incorporated - https://www.ti.com/
  *	Tero Kristo <t-kristo@ti.com>
  */
-
+#define DEBUG 1
 #include <asm/io.h>
 #include <dm.h>
 #include <errno.h>

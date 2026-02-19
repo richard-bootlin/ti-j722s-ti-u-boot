@@ -374,6 +374,7 @@ void __noreturn jump_to_image_no_args(struct spl_image_info *spl_image)
 		goto start_arm64;
 	}
 
+	printf("DDR: 0x%x\n", *(uint32_t*)0x0f308000U);
 	if (!fit_image_info[IMAGE_ID_DM_FW].image_start) {
 		loadaddr = load_elf_image_phdr(loadaddr);
 	} else {

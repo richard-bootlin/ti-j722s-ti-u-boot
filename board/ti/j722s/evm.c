@@ -5,7 +5,7 @@
  * Copyright (C) 2024 Texas Instruments Incorporated - https://www.ti.com/
  *
  */
-
+#define DEBUG 1
 #include <asm/arch/hardware.h>
 #include <asm/gpio.h>
 #include <asm/io.h>
