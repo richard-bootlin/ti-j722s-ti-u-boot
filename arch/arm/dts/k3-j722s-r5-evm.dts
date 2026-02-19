@@ -7,7 +7,7 @@
 #include "k3-j722s-evm.dts"
 #include "k3-j722s-evm-u-boot.dtsi"
 
-#include "k3-j722s-ddr-lp4-50-4000.dtsi"
+#include "k3-j722s-ddr-evm-lp4-1600.dtsi"
 #include "k3-am62a-ddr.dtsi"
 
 / {
