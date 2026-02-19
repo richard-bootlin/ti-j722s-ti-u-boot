@@ -637,7 +637,7 @@ void k3_ddrss_lpddr4_exit_low_power(struct udevice *dev,
 				 BIT(2) << K3_DDRSS_CFG_DENALI_PHY_1820_SET_DFI_INPUT_2_SHIFT);
 
 	/* PI_TCMD_GAP:RW:16:16:=0x0000 PI_NOTCARE_PHYUPD:RW:8:2:=0x00 PI_INIT_LVL_EN:RW:0:1:=0x00 */
-	lpddr4_k3_clr_pi(ddrss, CSL_EMIF_CTLCFG_DENALI_PI_4, 0xFFU);
+	lpddr4_k3_clr_pi(ddrss, DENALI_PI_4, 0xFFU);
 
 	/* PHY_INDEP_TRAIN_MODE:RW:24:1:=0x01 ODT_VALUE:RW:16:2:=0x01 NO_MRW_INIT:RW:8:1:=0x00 DFI_CMD_RATIO:RD:0:1:=0x00 */
 	k3_ddrss_reg_update_bits(ddrss->ddrss_ctl_cfg,
