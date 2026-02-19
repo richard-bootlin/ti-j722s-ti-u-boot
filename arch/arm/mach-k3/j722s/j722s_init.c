@@ -175,8 +175,22 @@ static void j722s_pmic_exit_low_power(void)
 	pmic_reg_write(pmic, PMIC_NSLEEP_REG, 0x3);
 }
 
+__maybe_unused static void dump_HEX_readl(unsigned int addr, unsigned int size)
+{
+	for (size /= 4; size > 0; addr += 4, size -= 4) {
+		printf("%x", readl(addr));
+		if ((size % 16) == 0)
+			printf("\n");
+		else
+			printf(" ");
+	}
+}
+
 static void k3_mem_init(void)
 {
+#define DO_RAM_PATTERN_TEST 1
+#define RAM_START 0x80000000U
+#define SZ 2500U
 	struct udevice *dev;
 	struct k3_ddrss_regs regs;
 	int ret;
@@ -195,6 +209,11 @@ static void k3_mem_init(void)
 			j722s_pmic_exit_low_power();
 			k3_ddrss_lpddr4_exit_low_power(dev, &regs);
 			printf("DDR out of retention?\n");
+
+			if (DO_RAM_PATTERN_TEST) {
+				writel(0xcafedeca, RAM_START); // tests bits
+				dump_HEX_readl(RAM_START, SZ*4);
+			}
 		}
 	}
 }
