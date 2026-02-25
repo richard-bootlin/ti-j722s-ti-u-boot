@@ -540,7 +540,7 @@ static void Write_MMR_Field(struct k3_ddrss_desc *ddrss, u32 offset,
 	u32 mask;
 
 	/* Build a mask of 1s for the field. */
-	mask = ((u32) 1U << width) - ((u32) 1U << leftshift);
+	mask = (((u32) 1U << width) - 1U ) << leftshift;
 	k3_ddrss_reg_update_bits(ddrss->ddrss_ctl_cfg,
 				 offset,
 				 mask,
