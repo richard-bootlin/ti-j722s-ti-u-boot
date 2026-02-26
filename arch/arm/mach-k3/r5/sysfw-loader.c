@@ -108,7 +108,7 @@ __weak int board_is_resuming(void)
  */
 bool spl_load_simple_fit_skip_processing(void)
 {
-	return board_is_resuming() ? true : !sysfw_loaded;
+	return !sysfw_loaded;
 }
 
 static int fit_get_data_by_name(const void *fit, int images, const char *name,
