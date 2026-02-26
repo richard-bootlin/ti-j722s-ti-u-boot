@@ -188,7 +188,7 @@ __maybe_unused static void dump_HEX_readl(unsigned int addr, unsigned int size)
 
 static void k3_mem_init(void)
 {
-#define DO_RAM_PATTERN_TEST 1
+#define DO_RAM_PATTERN_TEST 0
 #define RAM_START 0x80000000U
 #define SZ 2500U
 	struct udevice *dev;
@@ -207,13 +207,45 @@ static void k3_mem_init(void)
 			 * - exit DDR from low power
 			 */
 			j722s_pmic_exit_low_power();
-			k3_ddrss_lpddr4_exit_low_power(dev, &regs);
+			if (0)
+			{
+				volatile uint32_t *mmrPtr;
+				volatile uint32_t lp_status = 0;
+
+				printf("remove self refresh\n");
+				//Enter SR long with Mem clock gating
+				//Program self refresh mode
+				mmrPtr = (uint32_t *) (0x0f308000U + 0x280);
+				*mmrPtr = (0x2<< 8); //LP_MODE_NONE = 0x2
+				printf("self refresh removed\n");
+
+				//poll self refresh mode change
+				mmrPtr = (uint32_t *) (0x0f308000U + 0x564);
+				printf("wait for lp status 0x%x\n", *mmrPtr);
+				while(lp_status != 0x10000)
+					lp_status = *mmrPtr & 0x10000;
+				printf("DDR exited suspend\n");
+			} else
+//				k3_ddrss_lpddr4_exit_low_power(dev, &regs);
 			printf("DDR out of retention?\n");
 
+    for (unsigned long j = 0; j < 5 ; j++) { /* 0x80 for full mem */
+            uint32_t cksum = 0;
+            volatile uint32_t addr = 0x80000000UL + 0x1000000UL * j;
+            for (unsigned long i = 0; i < 0x1000000; i+= (sizeof(uint32_t)))
+                    cksum ^= *(uint32_t *)(addr + i);
+            printf("cksum=from 0x%x 0x%x\n", addr, cksum);
+    }
+
+    for (unsigned long j = 0; j < 1 ; j++) {
+            uint32_t addr = 0x80000000UL + 0x1000000UL * j;
+	    dump_HEX_readl(addr, 0x1000);
+    }
+
 			if (DO_RAM_PATTERN_TEST) {
-				writel(0xcafedeca, RAM_START); // tests bits
 				dump_HEX_readl(RAM_START, SZ*4);
 			}
+		} else {
 		}
 	}
 }
