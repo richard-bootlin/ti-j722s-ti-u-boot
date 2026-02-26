@@ -178,12 +178,13 @@ static void j722s_pmic_exit_low_power(void)
 __maybe_unused static void dump_HEX_readl(unsigned int addr, unsigned int size)
 {
 	for (size /= 4; size > 0; addr += 4, size -= 4) {
-		printf("%x", readl(addr));
 		if ((size % 16) == 0)
 			printf("\n");
 		else
 			printf(" ");
+		printf("%x", readl(addr));
 	}
+	printf("\n");
 }
 
 static void k3_mem_init(void)
