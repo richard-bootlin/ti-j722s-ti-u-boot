@@ -4,7 +4,7 @@
  *
  * Copyright (C) 2023 Texas Instruments Incorporated - https://www.ti.com/
  */
-
+#define DEBUG 1
 #include <linux/printk.h>
 #include <linux/types.h>
 #include <asm/hardware.h>
@@ -279,16 +279,20 @@ void __noreturn jump_to_image_no_args(struct spl_image_info *spl_image)
 		if (!valid_elf_image(loadaddr))
 			panic("%s: DM-Firmware image is not valid, it cannot be loaded\n",
 			      __func__);
+		printf("loadaddr=0x%x\n", loadaddr);
 		loadaddr = extract_shdr(".ctx_buffer", loadaddr, &size);
 		if (!loadaddr)
 			panic("Extract addr failed, %x\n", loadaddr);
 
+		printf("ctx_buffer=0x%x\n", loadaddr);
 		ret = ti_sci->ops.lpm_ops.lpm_save_addr(ti_sci, loadaddr, size);
 		if (ret)
 			panic("TIFS lpm save addr fail : %x\n", ret);
 
 		loadaddr = fit_image_info[IMAGE_ID_DM_FW].image_start;
+		printf("dm image start=0x%x\n", loadaddr);
 		loadaddr = load_elf_image_phdr(loadaddr);
+		printf("elf image=0x%x\n", loadaddr);
 
 		/*
 		 * TIFS minimal context restore
@@ -383,6 +387,7 @@ void __noreturn jump_to_image_no_args(struct spl_image_info *spl_image)
 #if IS_ENABLED(CONFIG_SOC_K3_J721E) || IS_ENABLED(CONFIG_SOC_K3_J784S4) \
 			 || IS_ENABLED(CONFIG_SOC_K3_J722S)
 			loadaddr = extract_shdr(".ctx_buffer", loadaddr, &size);
+		printf("ctx_buffer=0x%x\n", loadaddr);
 			if (!loadaddr) {
 				pr_warn("Extract addr failed : %x\n", loadaddr);
 			} else {

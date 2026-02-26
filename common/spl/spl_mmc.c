@@ -5,6 +5,7 @@
  *
  * Aneesh V <aneesh@ti.com>
  */
+#define DEBUG 1
 #include <dm.h>
 #include <log.h>
 #include <part.h>
@@ -24,6 +25,7 @@ static ulong h_spl_load_read(struct spl_load_info *load, ulong off,
 	lbaint_t sector = off >> bd->log2blksz;
 	lbaint_t count = size >> bd->log2blksz;
 
+	printf("%s\n", __func__);
 	return blk_dread(bd, sector, count, buf) << bd->log2blksz;
 }
 
@@ -197,6 +199,7 @@ static int spl_mmc_fs_load_os(struct spl_image_info *spl_image,
 {
 	int err = -ENOENT;
 
+	printf("%s\n", __func__);
 	if (CONFIG_IS_ENABLED(FS_FAT)) {
 		err = spl_load_image_fat_os(spl_image, bootdev, blk_dev, part);
 		if (!err)
@@ -217,6 +220,7 @@ static int spl_mmc_fs_load(struct spl_image_info *spl_image,
 {
 	int err = -ENOENT;
 
+	printf("%s\n", __func__);
 	if (CONFIG_IS_ENABLED(FS_FAT)) {
 		err = spl_load_image_fat(spl_image, bootdev, blk_dev, part, file);
 		if (!err)
@@ -239,6 +243,7 @@ static int spl_mmc_do_fs_boot(struct spl_image_info *spl_image,
 {
 	int ret = -ENOSYS;
 
+	printf("%s\n", __func__);
 	__maybe_unused int partition = CONFIG_SYS_MMCSD_FS_BOOT_PARTITION;
 
 #if CONFIG_SYS_MMCSD_FS_BOOT_PARTITION == -1
@@ -324,6 +329,7 @@ unsigned long __weak spl_mmc_get_uboot_raw_sector(struct mmc *mmc,
 int default_spl_mmc_emmc_boot_partition(struct mmc *mmc)
 {
 	int part;
+	printf("%s\n", __func__);
 #ifdef CONFIG_SYS_MMCSD_RAW_MODE_EMMC_BOOT_PARTITION
 	part = CONFIG_SYS_MMCSD_RAW_MODE_EMMC_BOOT_PARTITION;
 #else

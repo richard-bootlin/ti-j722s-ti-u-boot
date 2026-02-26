@@ -8,6 +8,7 @@
  * FAT Image Functions copied from spl_mmc.c
  */
 
+#define DEBUG 1
 #include <env.h>
 #include <log.h>
 #include <spl.h>
@@ -107,6 +108,7 @@ int spl_load_image_fat_os(struct spl_image_info *spl_image,
 	int err;
 	__maybe_unused char *file;
 
+	printf("%s\n", __func__);
 	if (!CONFIG_IS_ENABLED(FALCON_LOAD_ARGS))
 		return spl_load_image_fat(spl_image, bootdev, block_dev,
 					  partition,

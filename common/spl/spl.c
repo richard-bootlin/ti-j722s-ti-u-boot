@@ -5,7 +5,7 @@
  *
  * Aneesh V <aneesh@ti.com>
  */
-
+#define DEBUG 1
 #include <config.h>
 #include <bloblist.h>
 #include <binman_sym.h>

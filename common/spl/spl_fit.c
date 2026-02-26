@@ -4,6 +4,7 @@
  * Written by Simon Glass <sjg@chromium.org>
  */
 
+#define DEBUG 1
 #include <errno.h>
 #include <fpga.h>
 #include <gzip.h>
@@ -726,16 +727,20 @@ int spl_load_simple_fit(struct spl_image_info *spl_image,
 	if (ret < 0)
 		return ret;
 
+	printf("%s %d\n", __func__, __LINE__);
 	/* skip further processing if requested to enable load-only use cases */
 	if (spl_load_simple_fit_skip_processing())
 		return 0;
 
+	printf("%s %d\n", __func__, __LINE__);
 	ctx.fit = spl_load_simple_fit_fix_load(ctx.fit);
 
+	printf("%s %d\n", __func__, __LINE__);
 	ret = spl_simple_fit_parse(&ctx);
 	if (ret < 0)
 		return ret;
 
+	printf("%s %d\n", __func__, __LINE__);
 	if (IS_ENABLED(CONFIG_SPL_FPGA))
 		spl_fit_load_fpga(&ctx, info, offset);
 
@@ -766,11 +771,13 @@ int spl_load_simple_fit(struct spl_image_info *spl_image,
 		return -1;
 	}
 
+	printf("%s %d\n", __func__, __LINE__);
 	/* Load the image and set up the spl_image structure */
 	ret = load_simple_fit(info, offset, &ctx, node, spl_image);
 	if (ret)
 		return ret;
 
+	printf("%s %d\n", __func__, __LINE__);
 	/*
 	 * For backward compatibility, we treat the first node that is
 	 * as a U-Boot image, if no OS-type has been declared.
@@ -780,6 +787,7 @@ int spl_load_simple_fit(struct spl_image_info *spl_image,
 	else if (!IS_ENABLED(CONFIG_SPL_OS_BOOT))
 		spl_image->os = IH_OS_U_BOOT;
 
+	printf("%s %d\n", __func__, __LINE__);
 	/*
 	 * Booting a next-stage U-Boot may require us to append the FDT.
 	 * We allow this to fail, as the U-Boot image might embed its FDT.
@@ -789,12 +797,14 @@ int spl_load_simple_fit(struct spl_image_info *spl_image,
 		if (ret < 0 && spl_image->os != IH_OS_U_BOOT)
 			return ret;
 	}
+	printf("%s %d\n", __func__, __LINE__);
 
 	firmware_node = node;
 	/* Now check if there are more images for us to load */
 	for (; ; index++) {
 		uint8_t os_type = IH_OS_INVALID;
 
+	printf("%s %d\n", __func__, __LINE__);
 		node = spl_fit_get_image_node(&ctx, "loadables", index);
 		if (node < 0)
 			break;
@@ -853,6 +863,7 @@ int spl_load_simple_fit(struct spl_image_info *spl_image,
 	upl_set_fit_info(map_to_sysmem(ctx.fit), ctx.conf_node,
 			 spl_image->entry_point);
 
+	printf("%s %d\n", __func__, __LINE__);
 	return 0;
 }
 
