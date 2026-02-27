@@ -81,6 +81,13 @@ int board_init(void)
 #if defined(CONFIG_XPL_BUILD)
 void spl_perform_fixups(struct spl_image_info *spl_image)
 {
+#if IS_ENABLED(CONFIG_TARGET_J722S_R5_EVM)
+	if (board_is_resuming()) {
+		printf("\n ----- spl_perform_fixups found \n");
+		return;
+	}
+#endif
+
 	if (IS_ENABLED(CONFIG_K3_DDRSS)) {
 		if (IS_ENABLED(CONFIG_K3_INLINE_ECC))
 			fixup_ddr_driver_for_ecc(spl_image);
@@ -89,6 +96,19 @@ void spl_perform_fixups(struct spl_image_info *spl_image)
 	}
 
 	detect_enable_spinand(spl_image->fdt_addr);
+}
+#endif
+
+#if (IS_ENABLED(CONFIG_SPL_LOAD_FIT) && IS_ENABLED(CONFIG_TARGET_J722S_R5_EVM))
+int board_fit_config_name_match(const char *name)
+{
+	if (board_is_resuming()) {
+		if (!strcmp(name, "k3-lpm")) {
+			printf("\n ----- k3-lpm found \n");
+			return 0;
+		}
+	}
+	return -1;
 }
 #endif
 

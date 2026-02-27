@@ -315,6 +315,7 @@ void __noreturn jump_to_image_no_args(struct spl_image_info *spl_image)
 		if (ret)
 			panic("ATF failed to resume (%d)\n", ret);
 
+		printf("\n------  ---- RESUMING  -----\n\n");
 		goto start_arm64;
 	}
 
