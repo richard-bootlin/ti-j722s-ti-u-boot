@@ -230,7 +230,8 @@ static void k3_mem_init(void)
 //				k3_ddrss_lpddr4_exit_low_power(dev, &regs);
 			printf("DDR out of retention?\n");
 
-    for (unsigned long j = 0; j < 5 ; j++) { /* 0x80 for full mem */
+#if 0
+    for (unsigned long j = 0; j < 0 ; j++) { /* 0x80 for full mem */
             uint32_t cksum = 0;
             volatile uint32_t addr = 0x80000000UL + 0x1000000UL * j;
             for (unsigned long i = 0; i < 0x1000000; i+= (sizeof(uint32_t)))
@@ -242,6 +243,27 @@ static void k3_mem_init(void)
             uint32_t addr = 0x80000000UL + 0x1000000UL * j;
 	    dump_HEX_readl(addr, 0x1000);
     }
+    printf("Write patterns\n");
+    for (unsigned long j = 0; j < 0x80 ; j++) { /* 0x80 for full mem */
+            uint32_t cksum = 0;
+            volatile uint32_t addr = 0x80000000UL + 0x1000000UL * j;
+            for (unsigned long i = 0; i < 0x1000000; i+= (sizeof(uint32_t))) {
+		    uint32_t val = readl(addr + i);
+                    writel(val + i, addr + i);
+                    cksum ^= val + i;
+	    }
+            printf("cksum=from 0x%x 0x%x\n", addr, cksum);
+    }
+    printf("Read patterns\n");
+    for (unsigned long j = 0; j < 0x80 ; j++) { /* 0x80 for full mem */
+            uint32_t cksum = 0;
+            volatile uint32_t addr = 0x80000000UL + 0x1000000UL * j;
+            for (unsigned long i = 0; i < 0x1000000; i+= (sizeof(uint32_t)))
+                    cksum ^= *(uint32_t *)(addr + i);
+            printf("cksum=from 0x%x 0x%x\n", addr, cksum);
+    }
+#endif
+
 
 			if (DO_RAM_PATTERN_TEST) {
 				dump_HEX_readl(RAM_START, SZ*4);
