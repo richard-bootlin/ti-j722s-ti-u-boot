@@ -179,3 +179,13 @@ bool am62xx_wkup_conf_boot_is_resume(void)
 		am62xx_wkup_conf_canuart_wakeup_active() &&
 		am62xx_wkup_conf_canuart_magic_word_set();
 }
+
+int __weak board_is_resuming(void)
+{
+	return 0;
+}
+
+bool j722s_wkup_conf_boot_is_resume(void)
+{
+	return (board_is_resuming() > 0);
+}
