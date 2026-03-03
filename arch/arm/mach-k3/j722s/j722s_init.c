@@ -40,7 +40,7 @@ static void store_boot_info_from_rom(void)
 	       sizeof(struct rom_extended_boot_data));
 }
 
-static void ctrl_mmr_unlock(void)
+void ctrl_mmr_unlock(void)
 {
 	/* Unlock all WKUP_CTRL_MMR0 module registers */
 	mmr_unlock(WKUP_CTRL_MMR0_BASE, 0);
@@ -191,6 +191,9 @@ void board_init_f(ulong dummy)
 {
 	int ret;
 	struct udevice *dev;
+
+	/* init resume flag */
+	gd_set_k3_resuming(-1);
 
 	k3_spl_init();
 	k3_mem_init();
