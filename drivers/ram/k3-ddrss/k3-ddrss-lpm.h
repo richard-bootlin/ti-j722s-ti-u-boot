@@ -15,7 +15,9 @@
 void k3_ddrss_self_refresh_exit(void __iomem *ddrss_ctl_cfg);
 void k3_ddrss_lpm_resume(void __iomem *ddrss_ctl_cfg);
 void am62xx_ddrss_deassert_retention(void);
+void j722s_ddrss_deassert_retention(void);
 bool am62xx_wkup_conf_boot_is_resume(void);
+bool j722s_wkup_conf_boot_is_resume(void);
 void k3_ddrss_run_retention_latch_clear_sequence(void);
 
 #endif  /* _K3_DDRSS_LPM_H_ */
