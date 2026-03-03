@@ -165,6 +165,14 @@ void am62xx_ddrss_deassert_retention(void)
 				 0);
 }
 
+__weak void ctrl_mmr_unlock(void) { };
+
+void j722s_ddrss_deassert_retention(void)
+{
+	ctrl_mmr_unlock();
+	am62xx_ddrss_deassert_retention();
+}
+
 static void k3_ddrss_clear_retention_latch_and_magic_words(void)
 {
 	int ret;
@@ -242,6 +250,16 @@ bool am62xx_wkup_conf_boot_is_resume(void)
 	return IS_ENABLED(CONFIG_K3_IODDR) &&
 		am62xx_wkup_conf_canuart_wakeup_active() &&
 		am62xx_wkup_conf_canuart_magic_word_set();
+}
+
+int __weak board_is_resuming(void)
+{
+	return 0;
+}
+
+bool j722s_wkup_conf_boot_is_resume(void)
+{
+	return (board_is_resuming() > 0);
 }
 
 void k3_ddrss_run_retention_latch_clear_sequence(void)

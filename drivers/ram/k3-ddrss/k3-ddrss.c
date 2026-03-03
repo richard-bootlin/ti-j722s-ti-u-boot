@@ -1303,7 +1303,7 @@ static const struct k3_ddrss_data k3_data = {
 	.flags = SINGLE_DDR_SUBSYSTEM,
 };
 
-static const struct k3_ddrss_data am62xx_data = {
+__maybe_unused static const struct k3_ddrss_data am62xx_data = {
 	.flags = SINGLE_DDR_SUBSYSTEM,
 	.is_lpm_resume = am62xx_wkup_conf_boot_is_resume,
 	.ddrss_deassert_retention = am62xx_ddrss_deassert_retention,
@@ -1313,11 +1313,18 @@ static const struct k3_ddrss_data j721s2_data = {
 	.flags = MULTI_DDR_SUBSYSTEM,
 };
 
+__maybe_unused static const struct k3_ddrss_data j722s_data = {
+	.flags = SINGLE_DDR_SUBSYSTEM,
+	.is_lpm_resume = j722s_wkup_conf_boot_is_resume,
+	.ddrss_deassert_retention = j722s_ddrss_deassert_retention,
+};
+
 static const struct udevice_id k3_ddrss_ids[] = {
 	{.compatible = "ti,am62a-ddrss", .data = (ulong)&am62xx_data, },
 	{.compatible = "ti,am64-ddrss", .data = (ulong)&k3_data, },
 	{.compatible = "ti,j721e-ddrss", .data = (ulong)&k3_data, },
 	{.compatible = "ti,j721s2-ddrss", .data = (ulong)&j721s2_data, },
+	{.compatible = "ti,j722s-ddrss", .data = (ulong)&j722s_data, },
 	{}
 };
 
