@@ -506,6 +506,8 @@ static int k3_ddrss_ofdata_to_priv(struct udevice *dev)
 			dev_err(dev, "ti,canuart-wake failed\n");
 			return PTR_ERR(ddrss->canuart_wake);
 		}
+	}
+	if (IS_ENABLED(CONFIG_K3_IODDR) || IS_ENABLED(CONFIG_SOC_K3_J722S)) {
 		ddrss->ddr_pmctrl = syscon_regmap_lookup_by_phandle(dev, "ti,ddr-pmctrl");
 		if (IS_ERR_OR_NULL(ddrss->ddr_pmctrl)) {
 			dev_err(dev, "ti,ddr-pmctrl failed\n");
@@ -518,12 +520,14 @@ static int k3_ddrss_ofdata_to_priv(struct udevice *dev)
 	return ret;
 }
 
-#if defined(CONFIG_K3_J721E_DDRSS)
-
+#if defined(CONFIG_K3_J721E_DDRSS) || defined(CONFIG_SOC_K3_J722S)
 int __weak board_is_resuming(void)
 {
 	return 0;
 }
+#endif
+
+#if defined(CONFIG_K3_J721E_DDRSS)
 void k3_ddrss_lpddr4_exit_retention(struct udevice *dev,
 				    struct k3_ddrss_regs *regs)
 {
@@ -1224,9 +1228,16 @@ static void k3_ddrss_lpm_resume(struct k3_ddrss_desc *ddrss)
 		;
 }
 
+#if defined(CONFIG_SOC_K3_J722S)
+extern void ctrl_mmr_unlock(void);
+#endif
+
 #if IS_ENABLED(CONFIG_REGMAP)
 static void k3_ddrss_deassert_retention(struct k3_ddrss_desc *ddrss)
 {
+#if defined(CONFIG_SOC_K3_J722S)
+	ctrl_mmr_unlock();
+#endif
 	regmap_update_bits(ddrss->ddr_pmctrl,
 			   K3_WKUP_CTRL_MMR0_DDR16SS_PMCTRL,
 			   K3_WKUP_CTRL_MMR0_DDR16SS_PMCTRL_DATA_RET_LD |
@@ -1327,7 +1338,7 @@ static bool k3_ddrss_wkup_conf_canuart_magic_word_set(struct k3_ddrss_desc *ddrs
 	return magic_word == K3_WKUP_CTRL_MMR_CANUART_WAKE_OFF_MODE_STAT_MW;
 }
 
-static bool k3_ddrss_wkup_conf_boot_is_resume(struct k3_ddrss_desc *ddrss)
+__maybe_unused static bool k3_ddrss_wkup_conf_boot_is_resume(struct k3_ddrss_desc *ddrss)
 {
 	return IS_ENABLED(CONFIG_K3_IODDR) &&
 		k3_ddrss_wkup_conf_canuart_wakeup_active(ddrss) &&
@@ -1347,11 +1358,11 @@ static void k3_ddrss_run_retention_latch_clear_sequence(struct k3_ddrss_desc *dd
 		k3_ddrss_clear_retention_latch_and_magic_words(ddrss);
 }
 #else
-static void k3_ddrss_deassert_retention(struct k3_ddrss_desc *ddrss)
+__maybe_unused static void k3_ddrss_deassert_retention(struct k3_ddrss_desc *ddrss)
 {
 }
 
-static bool k3_ddrss_wkup_conf_boot_is_resume(struct k3_ddrss_desc *ddrss)
+__maybe_unused static bool k3_ddrss_wkup_conf_boot_is_resume(struct k3_ddrss_desc *ddrss)
 {
 	return false;
 }
@@ -1378,8 +1389,11 @@ static int k3_ddrss_probe(struct udevice *dev)
 	if (ret)
 		return ret;
 
-	is_lpm_resume = !IS_ERR_OR_NULL(ddrss->canuart_wake) &&
-		k3_ddrss_wkup_conf_boot_is_resume(ddrss);
+	if (IS_ENABLED(CONFIG_SOC_K3_J722S))
+		is_lpm_resume = board_is_resuming();
+	else
+		is_lpm_resume = !IS_ERR_OR_NULL(ddrss->canuart_wake) &&
+			k3_ddrss_wkup_conf_boot_is_resume(ddrss);
 
 	if (is_lpm_resume)
 		dev_info(dev, "Detected IO+DDR resume\n");
