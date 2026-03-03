@@ -182,6 +182,9 @@ void board_init_f(ulong dummy)
 	int ret;
 	struct udevice *dev;
 
+	/* init resume flag */
+	gd_set_k3_resuming(-1);
+
 	k3_spl_init();
 	k3_mem_init();
 	spl_enable_cache();
