@@ -294,7 +294,7 @@ void __noreturn jump_to_image_no_args(struct spl_image_info *spl_image)
 	/* Release all the exclusive devices held by SPL before starting ATF */
 	ti_sci->ops.dev_ops.release_exclusive_devices();
 
-	if (!IS_ENABLED(CONFIG_SOC_K3_J721E) && board_is_resuming()) {
+	if (!IS_ENABLED(CONFIG_SOC_K3_J721E) && !IS_ENABLED(CONFIG_SOC_K3_J722S) && board_is_resuming()) {
 		loadaddr = fit_image_info[IMAGE_ID_DM_FW].image_start;
 		if (!valid_elf_image(loadaddr))
 			panic("%s: DM-Firmware image is not valid, it cannot be loaded\n",
@@ -364,7 +364,7 @@ void __noreturn jump_to_image_no_args(struct spl_image_info *spl_image)
 	if (ret)
 		panic("%s: ATF failed to load on rproc (%d)\n", __func__, ret);
 
-	if (IS_ENABLED(CONFIG_SOC_K3_J721E))
+	if (IS_ENABLED(CONFIG_SOC_K3_J721E) || IS_ENABLED(CONFIG_SOC_K3_J722S))
 		save_certificate();
 
 #if CONFIG_IS_ENABLED(FIT_IMAGE_POST_PROCESS)
@@ -404,7 +404,7 @@ void __noreturn jump_to_image_no_args(struct spl_image_info *spl_image)
 		if (valid_elf_image(loadaddr)) {
 #if IS_ENABLED(CONFIG_SOC_K3_J721E) || IS_ENABLED(CONFIG_SOC_K3_J784S4) \
 			 || IS_ENABLED(CONFIG_SOC_K3_J722S)
-			if (IS_ENABLED(CONFIG_SOC_K3_J721E)) {
+			if (IS_ENABLED(CONFIG_SOC_K3_J721E) || IS_ENABLED(CONFIG_SOC_K3_J722S)) {
 				loadaddr = (u32)mem_addr_lpm.context_save_addr;
 				size = mem_addr_lpm.size;
 			} else {
@@ -429,7 +429,7 @@ start_arm64:
 	/* Add an extra newline to differentiate the ATF logs from SPL */
 	printf("Starting ATF on ARM64 core...\n\n");
 
-	if (IS_ENABLED(CONFIG_SOC_K3_J721E) || !board_is_resuming()) {
+	if (IS_ENABLED(CONFIG_SOC_K3_J721E) || IS_ENABLED(CONFIG_SOC_K3_J722S) || !board_is_resuming()) {
 		ret = rproc_start(1);
 		if (ret)
 			panic("%s: ATF failed to start on rproc (%d)\n",
