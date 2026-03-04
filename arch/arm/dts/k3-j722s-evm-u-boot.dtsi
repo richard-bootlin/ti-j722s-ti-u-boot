@@ -17,6 +17,10 @@
 	bootph-pre-ram;
 };
 
+&ddr_pmctrl {
+	bootph-pre-ram;
+};
+
 &main_bcdma {
 	bootph-pre-ram;
 };

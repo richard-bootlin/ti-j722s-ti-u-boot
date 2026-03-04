@@ -102,3 +102,7 @@
 &main_pktdma {
 	ti,sci = <&dm_tifs>;
 };
+
+&memorycontroller {
+	ti,ddr-pmctrl = <&ddr_pmctrl>;
+};
