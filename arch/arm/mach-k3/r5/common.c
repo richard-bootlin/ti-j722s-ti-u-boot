@@ -264,6 +264,26 @@ static void resume_rproc(void)
 		panic("power_domain_on failed: %d\n", ret);
 }
 
+static void save_certificate(void) {
+
+	if (extract_lpm_region()) {
+		pr_err("Cannot find valid LPM address range..\n");
+		return;
+	}
+
+	memcpy(mem_addr_lpm.atf_cert_addr,
+	       (void *)fit_image_info[IMAGE_ID_ATF].image_start,
+	       fit_image_info[IMAGE_ID_ATF].image_len);
+
+	memcpy(mem_addr_lpm.optee_cert_addr,
+	       (void *)fit_image_info[IMAGE_ID_OPTEE].image_start,
+	       fit_image_info[IMAGE_ID_OPTEE].image_len);
+
+	memcpy(mem_addr_lpm.dm_save_addr,
+	       (void *)fit_image_info[IMAGE_ID_DM_FW].image_start,
+	       fit_image_info[IMAGE_ID_DM_FW].image_len);
+}
+
 void __noreturn jump_to_image_no_args(struct spl_image_info *spl_image)
 {
 	typedef void __noreturn (*image_entry_noargs_t)(void);
@@ -274,7 +294,7 @@ void __noreturn jump_to_image_no_args(struct spl_image_info *spl_image)
 	/* Release all the exclusive devices held by SPL before starting ATF */
 	ti_sci->ops.dev_ops.release_exclusive_devices();
 
-	if (board_is_resuming()) {
+	if (!IS_ENABLED(CONFIG_SOC_K3_J721E) && board_is_resuming()) {
 		loadaddr = fit_image_info[IMAGE_ID_DM_FW].image_start;
 		if (!valid_elf_image(loadaddr))
 			panic("%s: DM-Firmware image is not valid, it cannot be loaded\n",
@@ -344,6 +364,9 @@ void __noreturn jump_to_image_no_args(struct spl_image_info *spl_image)
 	if (ret)
 		panic("%s: ATF failed to load on rproc (%d)\n", __func__, ret);
 
+	if (IS_ENABLED(CONFIG_SOC_K3_J721E))
+		save_certificate();
+
 #if CONFIG_IS_ENABLED(FIT_IMAGE_POST_PROCESS)
 	/* Authenticate ATF */
 	void *image_addr = (void *)fit_image_info[IMAGE_ID_ATF].image_start;
@@ -381,7 +404,12 @@ void __noreturn jump_to_image_no_args(struct spl_image_info *spl_image)
 		if (valid_elf_image(loadaddr)) {
 #if IS_ENABLED(CONFIG_SOC_K3_J721E) || IS_ENABLED(CONFIG_SOC_K3_J784S4) \
 			 || IS_ENABLED(CONFIG_SOC_K3_J722S)
-			loadaddr = extract_shdr(".ctx_buffer", loadaddr, &size);
+			if (IS_ENABLED(CONFIG_SOC_K3_J721E)) {
+				loadaddr = (u32)mem_addr_lpm.context_save_addr;
+				size = mem_addr_lpm.size;
+			} else {
+				loadaddr = extract_shdr(".ctx_buffer", loadaddr, &size);
+			}
 			if (!loadaddr) {
 				pr_warn("Extract addr failed : %x\n", loadaddr);
 			} else {
@@ -401,7 +429,7 @@ start_arm64:
 	/* Add an extra newline to differentiate the ATF logs from SPL */
 	printf("Starting ATF on ARM64 core...\n\n");
 
-	if (!board_is_resuming()) {
+	if (IS_ENABLED(CONFIG_SOC_K3_J721E) || !board_is_resuming()) {
 		ret = rproc_start(1);
 		if (ret)
 			panic("%s: ATF failed to start on rproc (%d)\n",
