@@ -181,6 +181,11 @@
 #endif
 					fdt = "fdt-0";
 				};
+
+				conf-1 {
+					description = "k3-lpm";
+					loadables = "dm";
+				};
 			};
 		};
 	};
