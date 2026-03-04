@@ -76,6 +76,8 @@ int wkup_r5f_am62_lpm_meta_data_addr(u32 *meta_data_addr);
 void lpm_resume_from_ddr(u32 meta_data_addr);
 int shutdown_mcu_r5_core1(void);
 int extract_lpm_region(void);
+unsigned long resume_to_dm_f(void);
+void resume_rproc_f(void);
 #if IS_ENABLED(CONFIG_SPL_OS_BOOT_SECURE) && !IS_ENABLED(CONFIG_ARM64)
 int k3_r5_falcon_bootmode(void);
 #endif

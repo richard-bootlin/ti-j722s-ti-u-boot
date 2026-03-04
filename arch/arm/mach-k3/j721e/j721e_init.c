@@ -11,7 +11,6 @@
 #include <asm/io.h>
 #include <asm/armv7_mpu.h>
 #include <asm/arch/hardware.h>
-#include <linux/soc/ti/ti_sci_protocol.h>
 #include <dm.h>
 #include <dm/uclass-internal.h>
 #include <dm/pinctrl.h>
@@ -20,9 +19,6 @@
 #include <mmc.h>
 #include <remoteproc.h>
 #include <k3-avs.h>
-#include <clk.h>
-#include <power-domain.h>
-#include <elf.h>
 
 #include "../sysfw-loader.h"
 #include "../common.h"
@@ -95,6 +91,8 @@ struct fwl_data cbass_hc_cfg0_fwls[] = {
 	{ "WKUP_CTRL_MMR0", 131, 16 },
 };
 #endif
+
+struct lpm_addr_info mem_addr_lpm;
 
 static void ctrl_mmr_unlock(void)
 {
@@ -246,39 +244,6 @@ static void store_boot_info_from_rom(void)
 	       sizeof(struct rom_extended_boot_data));
 }
 
-struct lpm_addr_info mem_addr_lpm;
-int extract_lpm_region(void)
-{
-	ofnode node;
-	fdt_addr_t lpm_reg_addr;
-	fdt_size_t lpm_reg_size;
-
-	node = ofnode_path("/reserved-memory/lpm-memories");
-	if (!ofnode_valid(node)) {
-		printf("lpm will not be functional \n");
-		return -ENODEV;
-	}
-
-	lpm_reg_addr = ofnode_get_addr(node);
-	if (lpm_reg_addr == FDT_ADDR_T_NONE) {
-		printf("Can't find a valid reserved node!\n");
-		return -ENODEV;
-	}
-
-	lpm_reg_size = ofnode_get_size(node);
-	if (lpm_reg_size == FDT_ADDR_T_NONE) {
-		printf("Can't find a valid reserved node!\n");
-		return -ENODEV;
-	}
-
-	mem_addr_lpm.context_save_addr = (u32 *)lpm_reg_addr;
-	mem_addr_lpm.atf_cert_addr =  (void *)(mem_addr_lpm.context_save_addr + LPM_IMAGE_SIZE);
-	mem_addr_lpm.optee_cert_addr = (void *)(mem_addr_lpm.atf_cert_addr + LPM_IMAGE_SIZE);
-	mem_addr_lpm.dm_save_addr = (void *)(mem_addr_lpm.optee_cert_addr + (2*LPM_IMAGE_SIZE));
-	mem_addr_lpm.size = lpm_reg_size;
-	return 0;
-}
-
 #ifdef CONFIG_SPL_OF_LIST
 void do_dt_magic(void)
 {
@@ -372,84 +337,6 @@ static void k3_deassert_DDR_RET(void)
 	pmic_reg_write(pmica, PMIC_NSLEEP_REG, 0x3);
 }
 #endif
-
-static unsigned long resume_to_dm_f(void)
-{
-	struct ti_sci_handle *ti_sci = get_ti_sci_handle();
-	unsigned long loadaddr = 0, save_addr = 0;
-	int ret = 0;
-
-	loadaddr = (unsigned long)mem_addr_lpm.dm_save_addr;
-	if (!valid_elf_image(loadaddr))
-		panic("%s: DM-Firmware image is not valid, it cannot be loaded\n",
-		      __func__);
-	loadaddr = load_elf_image_phdr(loadaddr);
-	save_addr = (unsigned long)mem_addr_lpm.context_save_addr;
-	ret = ti_sci->ops.lpm_ops.lpm_save_addr(ti_sci, save_addr, mem_addr_lpm.size);
-	if (ret)
-		panic("TIFS lpm save addr fail : %x\n", ret);
-	/*
-	 * TIFS minimal context restore
-	 * This restores also the firewall
-	 */
-	ret = ti_sci->ops.lpm_ops.restore_context(ti_sci, 0);
-	if (ret)
-		panic("TIFS min_context_restore failed (%d)\n", ret);
-	/*
-	 * Restore TFA in msmc memory
-	 */
-	ret = ti_sci->ops.lpm_ops.decrypt_tfa(ti_sci,
-					      CONFIG_K3_ATF_LOAD_ADDR);
-	if (ret)
-		panic("%s: TIFS failed to decrytp TFA : %x\n", __func__, ret);
-
-	/* restore TFA resume vectore address in main core */
-	ret = ti_sci->ops.lpm_ops.core_resume(ti_sci);
-	if (ret)
-		panic("ATF failed to resume (%d)\n", ret);
-
-	return loadaddr;
-}
-
-
-static void resume_rproc_f(void)
-{
-	struct power_domain rproc_pwrdmn;
-	unsigned long gtc_rate;
-	struct udevice *dev;
-	struct clk gtc_clk;
-	void *gtc_base;
-	int ret;
-
-	ret = uclass_get_device_by_seq(UCLASS_REMOTEPROC, 1, &dev);
-	if (ret)
-		panic("Unknown remote processor 1 (%d)\n", ret);
-
-	ret = power_domain_get_by_index(dev, &rproc_pwrdmn, 1);
-	if (ret)
-		panic("power_domain_get_rproc() failed: %d\n", ret);
-
-	ret = clk_get_by_index(dev, 0, &gtc_clk);
-	if (ret)
-		panic("clk_get failed: %d\n", ret);
-
-	gtc_base = dev_read_addr_ptr(dev);
-	if (!gtc_base)
-		panic("Get GTC address failed\n");
-
-	gtc_rate = clk_get_rate(&gtc_clk);
-
-#define GTC_CNTCR_REG	0x0
-#define GTC_CNTFID0_REG	0x20
-#define GTC_CNTR_EN	0x3
-	/* TFA expect the Global Timebase Counter to be set-up */
-	writel((u32)gtc_rate, gtc_base + GTC_CNTFID0_REG);
-	writel(GTC_CNTR_EN, gtc_base + GTC_CNTCR_REG);
-
-	ret = power_domain_on(&rproc_pwrdmn);
-	if (ret)
-		panic("power_domain_on failed: %d\n", ret);
-}
 
 void board_init_f(ulong dummy)
 {
