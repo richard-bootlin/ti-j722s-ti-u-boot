@@ -442,6 +442,11 @@ static int k3_ddrss_ofdata_to_priv(struct udevice *dev)
 
 #if defined(CONFIG_K3_J721E_DDRSS)
 
+int __weak board_is_resuming(void)
+{
+	return 0;
+}
+
 void k3_ddrss_lpddr4_exit_retention(struct udevice *dev,
 				    struct k3_ddrss_regs *regs)
 {
@@ -1151,7 +1156,10 @@ static int k3_ddrss_probe(struct udevice *dev)
 	ret = k3_ddrss_init_freq(ddrss);
 	if (ret)
 		return ret;
-
+#if defined(CONFIG_K3_J721E_DDRSS)
+	if (board_is_resuming())
+		return 0;
+#endif
 	k3_lpddr4_start(ddrss);
 
 	if (IS_ENABLED(CONFIG_K3_INLINE_ECC)) {
