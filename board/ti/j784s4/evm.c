@@ -68,6 +68,9 @@ int board_late_init(void)
 #if (IS_ENABLED(CONFIG_SPL_BUILD) && (IS_ENABLED(CONFIG_TARGET_J784S4_R5_EVM) || \
 				      IS_ENABLED(CONFIG_TARGET_J742S2_R5_EVM)))
 
+#define LPM_WAKE_SOURCE_PMIC_GPIO 0x91
+#define LPM_WAKE_SOURCE_MCU_IO    0x81
+
 static void clear_isolation(void)
 {
 	int ret;
@@ -93,12 +96,15 @@ bool j7xx_board_is_resuming(void)
 {
 	struct udevice *pmic;
 	u32 pmctrl_val = readl(WKUP_CTRL_MMR0_BASE + PMCTRL_IO_0);
+	struct lpm_scratch_space *lpm_scratch;
 	int err;
 
 	if (gd_k3_resuming() != K3_RESUME_STATE_UNKNOW)
 		goto end;
 
+	lpm_scratch = (struct lpm_scratch_space *)TI_SRAM_SCRATCH_LPM_START;
 	if ((pmctrl_val & IO_ISO_STATUS) == IO_ISO_STATUS) {
+		lpm_scratch->wake_src = LPM_WAKE_SOURCE_MCU_IO;
 		clear_isolation();
 		gd_set_k3_resuming(K3_RESUME_STATE_RESUMING);
 		debug("board is resuming from IO_DDR mode\n");
@@ -115,6 +121,7 @@ bool j7xx_board_is_resuming(void)
 
 	if (pmic_reg_read(pmic, K3_LPM_SCRATCH_PAD_REG) == K3_LPM_MAGIC_SUSPEND) {
 		debug("%s: board is resuming\n", __func__);
+		lpm_scratch->wake_src = LPM_WAKE_SOURCE_PMIC_GPIO;
 		gd_set_k3_resuming(K3_RESUME_STATE_RESUMING);
 
 		/* clean magic suspend */
@@ -122,6 +129,8 @@ bool j7xx_board_is_resuming(void)
 			printf("Failed to clean magic value for suspend detection in PMIC\n");
 	} else {
 		debug("%s: board is booting (no resume detected)\n", __func__);
+		lpm_scratch->wake_src = 0;
+		lpm_scratch->reserved = 0;
 		gd_set_k3_resuming(K3_RESUME_STATE_BOOTING);
 	}
 end:

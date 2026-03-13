@@ -13,5 +13,10 @@
 /* PMIC register where the magic value resides */
 #define K3_LPM_SCRATCH_PAD_REG 0xcb
 
+struct lpm_scratch_space {
+	u16 wake_src;
+	u16 reserved;
+} __packed;
+
 #endif /* __K3_LPM_H */
 
