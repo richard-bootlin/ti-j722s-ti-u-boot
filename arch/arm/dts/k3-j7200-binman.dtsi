@@ -294,25 +294,11 @@
 							region = <2>;
 						};
 
-						firewall-4762-0 {
-							/* nb_slv2__mem0 Background Firewall - 0 */
-							insert-template = <&firewall_bg_3>;
-							id = <4762>;
-							region = <0>;
-						};
-
 						firewall-4762-1 {
 							/* nb_slv2__mem0 Foreground Firewall */
 							insert-template = <&firewall_armv8_optee_fg>;
 							id = <4762>;
 							region = <1>;
-						};
-
-						firewall-4763-0 {
-							/* nb_slv3__mem0 Background Firewall - 0 */
-							insert-template = <&firewall_bg_3>;
-							id = <4763>;
-							region = <0>;
 						};
 
 						firewall-4763-1 {
