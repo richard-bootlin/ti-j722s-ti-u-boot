@@ -6,6 +6,7 @@
  * Copyright (C) 2026 Bootlin
  */
 
+#include <asm/arch/hardware.h>
 #include <asm/global_data.h>
 #include <clk.h>
 #include <dm/device.h>
@@ -28,6 +29,7 @@
 /* PMIC register where the magic value resides */
 #define K3_LPM_SCRATCH_PAD_REG_3 0xcb
 
+#define IO_ISO_STATUS BIT(25)
 #define FW_IMAGE_SIZE 0x80000
 
 struct lpm_addr_info {
@@ -38,6 +40,8 @@ struct lpm_addr_info {
 	u32 size;
 };
 
+__weak void clear_isolation(void) { }
+
 /* This is used by J722s */
 __weak void ctrl_mmr_unlock(void) { }
 
@@ -45,10 +49,21 @@ __weak void ctrl_mmr_unlock(void) { }
 bool j7xx_board_is_resuming(void)
 {
 	struct udevice *pmic, *i2c;
+	u32 pmctrl_val = 0;
 	int ret;
 
 	if (gd_k3_resuming() != K3_RESUME_STATE_UNKNOWN)
 		goto end;
+
+#ifdef PMCTRL_IO_LPM
+	pmctrl_val = readl(PMCTRL_IO_LPM);
+#endif
+	if ((pmctrl_val & IO_ISO_STATUS) == IO_ISO_STATUS) {
+		clear_isolation();
+		gd_set_k3_resuming(K3_RESUME_STATE_RESUMING);
+		debug("board is resuming from IO_DDR mode\n");
+		goto end;
+	}
 
 	if (IS_ENABLED(CONFIG_SOC_K3_J722S)) {
 		/*
