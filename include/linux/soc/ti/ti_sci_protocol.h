@@ -336,6 +336,8 @@ struct ti_sci_proc_ops {
 				    u32 *sts_flags);
 	int (*proc_shutdown_no_wait)(const struct ti_sci_handle *handle,
 				     u8 pid);
+	int (*proc_auth_apply_fwls)(const struct ti_sci_handle *handle,
+				    u64 *image_addr, u32 *image_size);
 };
 
 #define TI_SCI_RING_MODE_RING			(0)
@@ -635,9 +637,15 @@ struct ti_sci_fwl_ops {
 /**
  * struct ti_sci_lpm_ops - Low Power Mode operations
  * @min_context_restore: Request restoring context from DDR.
+ * @decrypt_tfa: Request for decrypting TFA at specific address.
+ * @core_resume: Request for resuming TFA once decrypted.
+ * @lpm_save_addr: Send DDR Save address to TIFS
  */
 struct ti_sci_lpm_ops {
 	int (*min_context_restore)(const struct ti_sci_handle *handle, u64 ctx_addr);
+	int (*decrypt_tfa)(const struct ti_sci_handle *handle,	u64 unencrypted_address);
+	int (*core_resume)(const struct ti_sci_handle *handle);
+	int (*lpm_save_addr)(const struct ti_sci_handle *handle, u64 context_addr, u32 size);
 };
 
 /**

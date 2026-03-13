@@ -133,3 +133,65 @@ void ti_secure_image_post_process(void **p_image, size_t *p_size)
 	      spl_boot_device() == BOOT_DEVICE_UART))
 		printf("Authentication passed\n");
 }
+
+void ti_secure_image_auth_apply_fwls(void **p_image, size_t image_size)
+{
+	struct ti_sci_handle *ti_sci = get_ti_sci_handle();
+	struct ti_sci_proc_ops *proc_ops = &ti_sci->ops.proc_ops;
+	u64 image_addr;
+	u32 backup_size;
+	int ret;
+
+	if (!image_size) {
+		debug("%s: Image size is null\n", __func__);
+		return;
+	}
+
+	if (get_device_type() == K3_DEVICE_TYPE_GP)
+		return;
+
+	if (get_device_type() != K3_DEVICE_TYPE_HS_SE &&
+	    !ti_secure_cert_detected(*p_image)) {
+		printf("Warning: Did not detect image signing certificate. "
+		       "Skipping authentication to prevent boot failure. "
+		       "This will fail on Security Enforcing(HS-SE) devices\n");
+		return;
+	}
+
+	/* Clean out image so it can be seen by system firmware */
+	image_addr = dma_map_single(*p_image, image_size, DMA_BIDIRECTIONAL);
+
+	debug("Authenticating image at address 0x%016llx\n", image_addr);
+	debug("Authenticating image of size %zu bytes\n", image_size);
+
+	/*
+	 * Authenticate image
+	 * The size argument is modified by proc_auth_apply_fwls and may be 0
+	 * when the authentication process has moved the image.
+	 * When this happens no further processing on the image is needed or
+	 * often even possible as it may have also been placed behind a firewall
+	 * when moved.
+	 * And moreover it expects a u32*. So, use the backup_size.
+	 */
+	backup_size = image_size;
+	ret = proc_ops->proc_auth_apply_fwls(ti_sci, &image_addr, &backup_size);
+	if (ret) {
+		printf("Authentication failed..but assume pass!\n");
+		hang();
+	}
+
+	/* Invalidate any stale lines over data written by system firmware */
+	dma_unmap_single(image_addr, image_size, DMA_BIDIRECTIONAL);
+
+	/*
+	 * Output notification of successful authentication to re-assure the
+	 * user that the secure code is being processed as expected. However
+	 * suppress any such log output in case of building for SPL and booting
+	 * via YMODEM. This is done to avoid disturbing the YMODEM serial
+	 * protocol transactions.
+	 */
+	if (!(IS_ENABLED(CONFIG_XPL_BUILD) &&
+	      IS_ENABLED(CONFIG_SPL_YMODEM_SUPPORT) &&
+	      spl_boot_device() == BOOT_DEVICE_UART))
+		printf("Certificate replay passed\n");
+}
