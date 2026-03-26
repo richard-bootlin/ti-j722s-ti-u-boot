@@ -329,6 +329,9 @@ void board_init_f(ulong dummy)
 	struct udevice *dev;
 	int ret;
 
+	/* init resume flag */
+	gd_set_k3_resuming(-1);
+
 	k3_spl_init();
 #if defined(CONFIG_SPL_OF_LIST) && defined(CONFIG_TI_I2C_BOARD_DETECT)
 	do_dt_magic();
