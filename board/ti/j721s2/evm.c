@@ -22,9 +22,11 @@
 #include <dm/uclass-internal.h>
 #include <dm/root.h>
 #include <asm/arch/k3-ddr.h>
+#include <power/pmic.h>
 
 #include "../common/board_detect.h"
 #include "../common/fdt_ops.h"
+#include "../common/k3-lpm.h"
 
 DECLARE_GLOBAL_DATA_PTR;
 
@@ -303,6 +305,41 @@ int board_late_init(void)
 
 	return 0;
 }
+
+#if (IS_ENABLED(CONFIG_SPL_BUILD) && IS_ENABLED(CONFIG_TARGET_J721S2_R5_EVM) && IS_ENABLED(CONFIG_PMIC_TPS65941))
+
+/* in board_init_f(), there's no BSS, so we can't use global/static variables */
+bool j7xx_board_is_resuming(void)
+{
+	struct udevice *pmic;
+	int err;
+
+	if (gd_k3_resuming() != K3_RESUME_STATE_UNKNOWN)
+		goto end;
+
+	err = uclass_get_device_by_name(UCLASS_PMIC,
+					"pmic@48", &pmic);
+	if (err) {
+		printf("Getting PMIC init failed: %d\n", err);
+		goto end;
+	}
+	debug("%s: PMIC is detected (%s)\n", __func__, pmic->name);
+
+	if (pmic_reg_read(pmic, K3_LPM_SCRATCH_PAD_REG) == K3_LPM_MAGIC_SUSPEND) {
+		debug("%s: board is resuming\n", __func__);
+		gd_set_k3_resuming(K3_RESUME_STATE_RESUMING);
+
+		/* clean magic suspend */
+		if (pmic_reg_write(pmic, K3_LPM_SCRATCH_PAD_REG, 0))
+			printf("Failed to clean magic value for suspend detection in PMIC\n");
+	} else {
+		debug("%s: board is booting (no resume detected)\n", __func__);
+		gd_set_k3_resuming(K3_RESUME_STATE_BOOTING);
+	}
+end:
+	return gd_k3_resuming() == K3_RESUME_STATE_RESUMING;
+}
+#endif /* CONFIG_SPL_BUILD && CONFIG_TARGET_J721S2_R5_EVM && CONFIG_PMIC_TPS65941 */
 
 void spl_board_init(void)
 {
