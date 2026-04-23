@@ -41,7 +41,7 @@ static int extract_lpm_region(void)
 	fdt_addr_t lpm_reg_addr;
 	fdt_size_t lpm_reg_size;
 
-	node = ofnode_path("/reserved-memory/lpm-memory");
+	node = ofnode_get_aliases_node("lpm_memory_region");
 	if (!ofnode_valid(node)) {
 		printf("lpm will not be functional\n");
 		return -ENODEV;
