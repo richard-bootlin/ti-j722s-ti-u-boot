@@ -18,19 +18,9 @@
 #include <elf.h>
 
 #include "../common.h"
+#include "../lpm-common.h"
 
 #if IS_ENABLED(CONFIG_SYS_K3_SPL_ATF)
-enum {
-	IMAGE_ID_ATF,
-	IMAGE_ID_OPTEE,
-	IMAGE_ID_SPL,
-	IMAGE_ID_DM_FW,
-	IMAGE_ID_TIFSSTUB_HS,
-	IMAGE_ID_TIFSSTUB_FS,
-	IMAGE_ID_TIFSSTUB_GP,
-	IMAGE_AMT,
-};
-
 #if CONFIG_IS_ENABLED(FIT_IMAGE_POST_PROCESS)
 static const char *image_os_match[IMAGE_AMT] = {
 	"arm-trusted-firmware",
@@ -43,7 +33,7 @@ static const char *image_os_match[IMAGE_AMT] = {
 };
 #endif
 
-static struct image_info fit_image_info[IMAGE_AMT];
+struct image_info fit_image_info[IMAGE_AMT];
 
 void init_env(void)
 {
@@ -169,6 +159,9 @@ void __noreturn jump_to_image(struct spl_image_info *spl_image)
 	ret = rproc_load(1, fit_image_info[IMAGE_ID_ATF].image_start, 0x200);
 	if (ret)
 		panic("%s: ATF failed to load on rproc (%d)\n", __func__, ret);
+
+	if (IS_ENABLED(CONFIG_K3_LPM))
+		lpm_process();
 
 #if CONFIG_IS_ENABLED(FIT_IMAGE_POST_PROCESS)
 	/* Authenticate ATF */
