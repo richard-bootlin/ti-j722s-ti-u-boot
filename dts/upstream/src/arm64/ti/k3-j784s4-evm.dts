@@ -16,6 +16,10 @@
 	compatible = "ti,j784s4-evm", "ti,j784s4";
 	model = "Texas Instruments J784S4 EVM";
 
+	aliases {
+		lpm_memory_region = &lpm_memory_region;
+	};
+
 	memory@80000000 {
 		/* 32G RAM */
 		reg = <0x00000000 0x80000000 0x00000000 0x80000000>,
@@ -23,10 +27,13 @@
 		device_type = "memory";
 		bootph-all;
 	};
+};
 
-	reserved_memory: reserved-memory {
-		#address-cells = <2>;
-		#size-cells = <2>;
+&reserved_memory {
+	lpm_memory_region: memory@ac000000 {
+		reg = <0x00 0xac000000 0x00 0x00300000>;
+		no-map;
+		bootph-all;
 	};
 };
 
