@@ -74,11 +74,6 @@ int board_is_resuming(void)
 end:
 	return gd_k3_resuming();
 }
-#else
-int board_is_resuming(void)
-{
-	return 0;
-}
 #endif /* CONFIG_SPL_BUILD && CONFIG_TARGET_J722S_R5_EVM */
 
 #if defined(CONFIG_XPL_BUILD)
