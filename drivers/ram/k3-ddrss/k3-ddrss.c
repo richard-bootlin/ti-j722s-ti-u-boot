@@ -1293,6 +1293,8 @@ static struct ram_ops k3_ddrss_ops = {
 
 static const struct k3_ddrss_data k3_data = {
 	.flags = SINGLE_DDR_SUBSYSTEM,
+	.lpm_init_only = true,
+	.is_lpm_resume = j722s_wkup_conf_boot_is_resume,
 };
 
 static const struct k3_ddrss_data am62xx_data = {
