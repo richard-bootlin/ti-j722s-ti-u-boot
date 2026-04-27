@@ -277,6 +277,11 @@ static void k3_deassert_ddr_ret(void)
 	pmic_reg_write(pmic, GPIO_OUT_1, regval);
 }
 
+__weak int board_is_resuming(void)
+{
+	return 0;
+}
+
 void k3_mem_init(void)
 {
 	struct udevice *dev;
