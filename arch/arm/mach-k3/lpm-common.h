@@ -9,6 +9,7 @@
 #ifndef _LPM_COMMON_H_
 #define _LPM_COMMON_H_
 
+bool j7xx_board_is_resuming(void);
 void __noreturn do_resume(void);
 void lpm_process(void);
 
