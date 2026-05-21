@@ -6,17 +6,27 @@
  * Copyright (C) 2026 Bootlin
  */
 
+#include <asm/global_data.h>
 #include <clk.h>
+#include <dm/device.h>
 #include <dm/read.h>
 #include <elf.h>
+#include <i2c.h>
 #include <linux/printk.h>
 #include <linux/soc/ti/ti_sci_protocol.h>
 #include <power-domain.h>
+#include <power/pmic.h>
 #include <remoteproc.h>
 #include <mach/security.h>
 
 #include "../common.h"
 #include "../lpm-common.h"
+
+/* Magic value in PMIC register to indicate the suspend state (SOC_OFF) */
+#define K3_LPM_MAGIC_SUSPEND 0xba
+
+/* PMIC register where the magic value resides */
+#define K3_LPM_SCRATCH_PAD_REG_3 0xcb
 
 #define FW_IMAGE_SIZE 0x80000
 
@@ -28,9 +38,73 @@ struct lpm_addr_info {
 	u32 size;
 };
 
-__weak bool j7xx_board_is_resuming(void)
+/* This is used by J722s */
+__weak void ctrl_mmr_unlock(void) { }
+
+/* in board_init_f(), there's no BSS, so we can't use global/static variables */
+bool j7xx_board_is_resuming(void)
 {
-	return false;
+	struct udevice *pmic, *i2c;
+	int ret, magic;
+
+	if (gd_k3_resuming() != K3_RESUME_STATE_UNKNOWN)
+		goto end;
+
+	if (IS_ENABLED(CONFIG_SOC_K3_J722S)) {
+		/*
+		 * On J722S devices, i2c access fails unless MMR
+		 * registers are unlocked.
+		 * Moreover, it fails also if we use PMIC API instead of I2C API.
+		 */
+		ctrl_mmr_unlock();
+		ret = uclass_get_device_by_name(UCLASS_I2C,
+						"i2c@2b200000", &i2c);
+		if (ret) {
+			printf("Getting I2C failed: %d\n", ret);
+			goto end;
+		}
+		ret = dm_i2c_probe(i2c, 0x48, 0, &pmic);
+		if (ret) {
+			printf("Getting PMIC failed: %d\n", ret);
+			goto end;
+		}
+	} else {
+		ret = uclass_get_device_by_name(UCLASS_PMIC,
+						"pmic@48", &pmic);
+		if (ret) {
+			printf("Getting PMIC init failed: %d\n", ret);
+			goto end;
+		}
+	}
+	debug("%s: PMIC is detected (%s)\n", __func__, pmic->name);
+
+	if (IS_ENABLED(CONFIG_SOC_K3_J722S))
+		magic = dm_i2c_reg_read(pmic, K3_LPM_SCRATCH_PAD_REG_3);
+	else
+		magic = pmic_reg_read(pmic, K3_LPM_SCRATCH_PAD_REG_3);
+
+	if (magic == K3_LPM_MAGIC_SUSPEND) {
+		debug("%s: board is resuming\n", __func__);
+		gd_set_k3_resuming(K3_RESUME_STATE_RESUMING);
+
+		/* clean magic suspend */
+		if (IS_ENABLED(CONFIG_SOC_K3_J722S))
+			ret = dm_i2c_reg_write(pmic, K3_LPM_SCRATCH_PAD_REG_3, 0);
+		else
+			ret = pmic_reg_write(pmic, K3_LPM_SCRATCH_PAD_REG_3, 0);
+
+		if (ret)
+			printf("Failed to clean magic value for suspend detection in PMIC\n");
+		/*
+		 * For robustness, the DM should also clean the magic value at
+		 * startup.
+		 */
+	} else {
+		debug("%s: board is booting (no resume detected)\n", __func__);
+		gd_set_k3_resuming(K3_RESUME_STATE_BOOTING);
+	}
+end:
+	return gd_k3_resuming() == K3_RESUME_STATE_RESUMING;
 }
 
 static int extract_lpm_region(struct lpm_addr_info *mem_addr_lpm)

@@ -126,6 +126,7 @@ struct rom_extended_boot_data {
 
 u32 get_boot_device(void);
 const char *get_reset_reason(void);
+bool j7xx_board_is_resuming(void);
 
 #define writel_verify(val, addr) \
 do { \
