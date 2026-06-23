@@ -41,6 +41,33 @@ struct lpm_addr_info {
 /* This is used by J722s */
 __weak void ctrl_mmr_unlock(void) { }
 
+#define GPIO_OUT_1 0x3D
+void k3_deassert_ddr_ret(const char *pmic_name, unsigned int ddr_ret_val,
+			 unsigned int ddr_ret_clk, bool toggle)
+{
+	struct udevice *pmic;
+	int regval;
+	int err;
+
+	err = uclass_get_device_by_name(UCLASS_PMIC, pmic_name, &pmic);
+	if (err) {
+		printf("Getting %s init failed: %d\n", pmic_name, err);
+		return;
+	}
+
+	/* Set DDR_RET Signal Low on PMIC */
+	regval = pmic_reg_read(pmic, GPIO_OUT_1) & ~ddr_ret_val;
+	pmic_reg_write(pmic, GPIO_OUT_1, regval);
+
+	if (toggle) {
+		/* Now toggle the CLK of the latch for DDR retention */
+		pmic_reg_write(pmic, GPIO_OUT_1, regval | ddr_ret_clk);
+		pmic_reg_write(pmic, GPIO_OUT_1, regval & ~ddr_ret_clk);
+		pmic_reg_write(pmic, GPIO_OUT_1, regval | ddr_ret_clk);
+		pmic_reg_write(pmic, GPIO_OUT_1, regval & ~ddr_ret_clk);
+	}
+}
+
 /* in board_init_f(), there's no BSS, so we can't use global/static variables */
 bool j7xx_board_is_resuming(void)
 {

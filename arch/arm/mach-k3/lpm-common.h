@@ -11,5 +11,7 @@
 
 void __noreturn do_resume(void);
 void lpm_process(void);
+void k3_deassert_ddr_ret(const char *pmic_name, unsigned int ddr_ret_val,
+			 unsigned int ddr_ret_clk, bool toggle);
 
 #endif
