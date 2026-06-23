@@ -266,6 +266,7 @@ static void resume_rproc_f(void)
 {
 	struct power_domain rproc_pwrdmn;
 	struct udevice *dev;
+	void *gtc_base;
 	int ret;
 
 	ret = uclass_get_device_by_seq(UCLASS_REMOTEPROC, 1, &dev);
@@ -275,6 +276,16 @@ static void resume_rproc_f(void)
 	ret = power_domain_get_by_index(dev, &rproc_pwrdmn, 1);
 	if (ret)
 		panic("power_domain_get_rproc() failed: %d\n", ret);
+
+	gtc_base = dev_read_addr_ptr(dev);
+	if (!gtc_base)
+		panic("Get GTC address failed\n");
+
+#define GTC_CNTCR_REG	0x0
+#define GTC_CNTR_EN	0x3
+
+	/* GTC counter values have been restored by TIFS, so enable the counter */
+	writel(GTC_CNTR_EN, gtc_base + GTC_CNTCR_REG);
 
 	ret = power_domain_on(&rproc_pwrdmn);
 	if (ret)
